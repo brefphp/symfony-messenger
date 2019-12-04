@@ -11,6 +11,7 @@ This guide assumes that:
 - Symfony is installed
 - Symfony Messenger is installed
 - Bref is installed and [configured to deploy Symfony](https://bref.sh/docs/frameworks/symfony.html)
+- a SQS queue has already been created
 
 First, install this package:
 

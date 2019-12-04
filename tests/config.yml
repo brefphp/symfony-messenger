@@ -1,0 +1,21 @@
+framework:
+    secret: foo
+    test: true
+
+    messenger:
+        transports:
+            foo: 'sqs://sqs.us-east-1.amazonaws.com/123456789101/bref-test'
+        routing:
+            'Bref\Messenger\Test\TestMessage\TestMessage': foo
+
+services:
+    Aws\Sqs\SqsClient:
+        $config:
+            version: latest
+            region: us-east-1
+            # Mock Guzzle for the tests
+            handler: '@mock_handler'
+
+    mock_handler:
+        class: Aws\MockHandler
+        public: true

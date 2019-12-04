@@ -1,57 +1,119 @@
-# My Awesome Project
+Bridge to use Symfony Messenger with SQS on AWS Lambda with [Bref](https://bref.sh).
 
-This is the catchphrase: what does this project do and how is it unique?
+## Introduction
 
-[![Build Status](https://img.shields.io/travis/com/PHP-DI/PHP-DI/master.svg?style=flat-square)](https://travis-ci.com/PHP-DI/PHP-DI)
-[![Latest Version](https://img.shields.io/github/release/PHP-DI/PHP-DI.svg?style=flat-square)](https://packagist.org/packages/PHP-DI/php-di)
-[![Total Downloads](https://img.shields.io/packagist/dt/PHP-DI/PHP-DI.svg?style=flat-square)](https://packagist.org/packages/PHP-DI/php-di)
-
-Here is an additional quick introduction, if necessary.
-
-## Why?
-
-Why does this project exist? Come on, don't delete this part. Fill it.
-Yes it's hard, but it's perhaps the most important part of the README.
-
-As to why *this* project exist, it's to serve as a template for future open
-source PHP projects. Of course, feel free to fork it and make your own recipe.
+TODO
 
 ## Installation
 
-Describe how to install the project/library/framework/…
+This guide assumes that:
 
-Make sure your installation instructions work by testing them!
+- Symfony is installed
+- Symfony Messenger is installed
+- Bref is installed and [configured to deploy Symfony](https://bref.sh/docs/frameworks/symfony.html)
 
-## Usage
+First, install this package:
 
-Describe how to use the project. A gif or a short code example is the best
-way to show how it works. Also keep paragraphs short and sentences simple: not
-everybody speaks english well.
-
-For the sake of the example here is how you can use this project template
-as a basis for your own repository:
-
-```bash
-git clone https://github.com/mnapoli/project-template.git my-project
-cd my-project
-# Remove the git repository metadata
-rm -rf .git/
-# Start a brand new repository
-git init
-git add .
+```
+composer require bref/symfony-messenger-sqs
 ```
 
-Easy peasy! Now you just have to code.
+Next, register the bundle in `config/bundles.php`:
 
-Make sure your examples work by testing them! I didn't test mine and I should feel ashamed.
+```php
+return [
+    ...
+    Bref\Messenger\BrefMessengerBundle::class => ['all' => true],
+];
+```
 
-## Contributing
+Next, configure Symfony Messenger to dispatch a message via SQS:
 
-See the [CONTRIBUTING](./.github/CONTRIBUTING.md) file.
+```yaml
+# config/packages/messenger.yaml
 
-## License
+framework:
+    messenger:
+        transports:
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+        routing:
+             'App\Message\MyMessage': async
+```
 
-Come on, [choose a license](http://choosealicense.com/) already! If you don't know or don't
-care, the MIT license is the most widely used license.
+Here, the `MyMessage` class will be dispatch to the `async` transport. We can now configure the `async` transport to use our SQS queue.
 
-For *this* project, I choose […drumroll…] the [Do What the Fuck You Want to Public License](http://www.wtfpl.net/).
+To do that, let's configure the `MESSENGER_TRANSPORT_DSN` environment variable to contain the URL of the queue:
+
+```dotenv
+MESSENGER_TRANSPORT_DSN=sqs://sqs.us-east-1.amazonaws.com/123456789101/my-queue
+```
+
+**Watch out:** the SQS URL _must start_ with `sqs://` instead of `https://`. This prefix is the way Symfony Messenger works. That means that you must replace the beginning of the SQS URL that AWS will give you.
+
+### Sending messages
+
+Now that Messenger is configured with SQS, we can send messages using the `MessageBusInterface`. For example, in a controller:
+
+```php
+class DefaultController extends AbstractController
+{
+    public function index()
+    {
+        $this->dispatchMessage(new App\Message\MyMessage());
+    }
+}
+```
+
+Read [the Symfony documentation to learn more](https://symfony.com/doc/current/messenger.html#dispatching-the-message).
+
+### Processing message
+
+Messages are sent to SQS, we now need to process those messages asynchronously.
+
+We can create a Lambda to do that in `serverless.yml`:
+
+```yaml
+functions:
+    worker:
+        handler: consumer.php
+        timeout: 120 # in seconds
+        reservedConcurrency: 5 # max. 5 messages processed in parallel
+        layers:
+            - ${bref:layer.php-73}
+        events:
+            -   sqs:
+                    arn: arn:aws:sqs:us-east-1:123456789101:my-queue
+                    # Only 1 item at a time to simplify error handling
+                    batchSize: 1
+```
+
+The Lambda handler will be `consumer.php`, a file we must create:
+
+```php
+<?php declare(strict_types=1);
+
+use Bref\Messenger\Sqs\SqsConsumer;
+
+require __DIR__ . '/config/bootstrap.php';
+
+lambda(function ($event) {
+    $kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+    $kernel->boot();
+
+    $sqsConsumer = $kernel->getContainer()->get(SqsConsumer::class);
+    $sqsConsumer->consumeLambdaEvent($event);
+});
+```
+
+Finally, we must configure the `SqsConsumer` service in `config/services.yaml` (this configuration relies on autowiring being enabled by default):
+
+```yaml
+services:
+    ...
+
+    Bref\Messenger\Sqs\SqsConsumer:
+        arguments:
+            # Inject the transport name used in config/packages/messenger.yaml 
+            $transportName: 'async'
+        public: true
+```

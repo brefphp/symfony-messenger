@@ -1,0 +1,5 @@
+services:
+    Bref\Messenger\Sqs\SqsTransportFactory:
+        tags: ['messenger.transport_factory']
+        arguments:
+            $sqs: '@Aws\Sqs\SqsClient'

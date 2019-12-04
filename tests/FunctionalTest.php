@@ -48,6 +48,7 @@ class FunctionalTest extends TestCase
         $queueUrl = '';
         $mock->append(function (CommandInterface $cmd, RequestInterface $request) use (&$queueUrl) {
             $queueUrl = (string) $request->getUri();
+
             return new Result(['MessageId' => 'abcd']);
         });
 

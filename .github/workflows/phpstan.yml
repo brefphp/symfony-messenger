@@ -1,6 +1,6 @@
-name: PHP Composer
+name: PHPStan
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -10,11 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate
-
-    - name: Install dependencies
+    - name: Composer
       run: composer install --prefer-dist --no-progress --no-suggest
 
-    - name: Run test suite
+    - name: PHPStan
       run: vendor/bin/phpstan analyse

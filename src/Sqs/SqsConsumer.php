@@ -3,6 +3,7 @@
 namespace Bref\Messenger\Sqs;
 
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
@@ -37,8 +38,15 @@ class SqsConsumer
         $this->transportName = $transportName;
     }
 
+    /**
+     * @param mixed $event
+     */
     public function consumeLambdaEvent($event): void
     {
+        if (! is_array($event) || ! isset($event['Records'])) {
+            throw new RuntimeException('The Lambda event data is not a SQS event');
+        }
+
         foreach ($event['Records'] as $record) {
             $envelope = $this->serializer->decode(['body' => $record['body']]);
 

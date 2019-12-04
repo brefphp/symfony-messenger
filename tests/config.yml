@@ -13,6 +13,7 @@ services:
         $config:
             version: latest
             region: us-east-1
+            credentials: false
             # Mock Guzzle for the tests
             handler: '@mock_handler'
 

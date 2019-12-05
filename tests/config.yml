@@ -4,7 +4,7 @@ framework:
 
     messenger:
         transports:
-            foo: 'sqs://sqs.us-east-1.amazonaws.com/123456789101/bref-test'
+            foo: 'https://sqs.us-east-1.amazonaws.com/123456789101/bref-test'
         routing:
             'Bref\Messenger\Test\TestMessage\TestMessage': foo
 

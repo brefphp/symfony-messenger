@@ -34,10 +34,10 @@ class FunctionalTest extends TestCase
         $factory = $this->container->get(SqsTransportFactory::class);
         $this->assertInstanceOf(SqsTransportFactory::class, $factory);
 
-        $this->assertTrue($factory->supports('sqs://sqs.us-east-1.amazonaws.com/123456789101/test', []));
-        $this->assertFalse($factory->supports('https://sqs.us-east-1.amazonaws.com/123456789101/test', []));
+        $this->assertTrue($factory->supports('https://sqs.us-east-1.amazonaws.com/123456789101/test', []));
+        $this->assertFalse($factory->supports('https://example.com', []));
 
-        $transport = $factory->createTransport('sqs://sqs.us-east-1.amazonaws.com/123456789101/test', [], new PhpSerializer);
+        $transport = $factory->createTransport('https://sqs.us-east-1.amazonaws.com/123456789101/test', [], new PhpSerializer);
         $this->assertInstanceOf(SqsTransport::class, $transport);
     }
 
@@ -56,7 +56,7 @@ class FunctionalTest extends TestCase
         $bus = $this->container->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage('hello'));
 
-        // Check that the URL has been transformed in a HTTPS URL
+        // Check that the URL is correct
         $this->assertEquals('https://sqs.us-east-1.amazonaws.com/123456789101/bref-test', $queueUrl);
     }
 }

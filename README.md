@@ -46,10 +46,8 @@ Here, the `MyMessage` class will be dispatch to the `async` transport. We can no
 To do that, let's configure the `MESSENGER_TRANSPORT_DSN` environment variable to contain the URL of the queue:
 
 ```dotenv
-MESSENGER_TRANSPORT_DSN=sqs://sqs.us-east-1.amazonaws.com/123456789101/my-queue
+MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789101/my-queue
 ```
-
-**Watch out:** the SQS URL _must start_ with `sqs://` instead of `https://`. This prefix is the way Symfony Messenger works. That means that you must replace the beginning of the SQS URL that AWS will give you.
 
 ### Sending messages
 

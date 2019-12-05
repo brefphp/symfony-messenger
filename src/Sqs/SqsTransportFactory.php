@@ -22,21 +22,11 @@ class SqsTransportFactory implements TransportFactoryInterface
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new SqsTransport($this->sqs, $this->serializer, $this->dsnToQueueUrl($dsn));
+        return new SqsTransport($this->sqs, $this->serializer, $dsn);
     }
 
     public function supports(string $dsn, array $options): bool
     {
-        return strpos($dsn, 'sqs://') === 0;
-    }
-
-    /**
-     * The Symfony Messenger DSN for the queue must start with `sqs://` so that the bundle can recognize it
-     * as a SQS queue URL.
-     * However we need to turn it into a real HTTPS URL to be able to use it (else it's not a valid URL).
-     */
-    private function dsnToQueueUrl(string $dsn): string
-    {
-        return str_replace('sqs://', 'https://', $dsn);
+        return preg_match('#^https://sqs\.[\w\-]+\.amazonaws\.com/.+#', $dsn) === 1;
     }
 }

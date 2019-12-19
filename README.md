@@ -1,9 +1,5 @@
 Bridge to use Symfony Messenger with SQS on AWS Lambda with [Bref](https://bref.sh).
 
-## Introduction
-
-TODO
-
 ## Installation
 
 This guide assumes that:

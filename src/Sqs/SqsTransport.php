@@ -19,12 +19,15 @@ class SqsTransport implements TransportInterface
     private $sqs;
     /** @var string */
     private $queueUrl;
+    /** @var string|null */
+    private $messageGroupId;
 
-    public function __construct(SqsClient $sqs, ?SerializerInterface $serializer, string $queueUrl)
+    public function __construct(SqsClient $sqs, ?SerializerInterface $serializer, string $queueUrl, ?string $messageGroupId)
     {
         $this->sqs = $sqs;
         $this->serializer = $serializer ?? new PhpSerializer;
         $this->queueUrl = $queueUrl;
+        $this->messageGroupId = $messageGroupId;
     }
 
     public function send(Envelope $envelope): Envelope
@@ -42,6 +45,10 @@ class SqsTransport implements TransportInterface
             'MessageBody' => $encodedMessage['body'],
             'QueueUrl' => $this->queueUrl,
         ];
+
+        if (null !== $this->messageGroupId) {
+            $arguments['MessageGroupId'] = $this->messageGroupId;
+        }
 
         try {
             $result = $this->sqs->sendMessage($arguments);

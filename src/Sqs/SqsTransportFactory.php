@@ -22,7 +22,7 @@ class SqsTransportFactory implements TransportFactoryInterface
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new SqsTransport($this->sqs, $this->serializer, $dsn);
+        return new SqsTransport($this->sqs, $this->serializer, $dsn, $options['message_group_id'] ?? null);
     }
 
     public function supports(string $dsn, array $options): bool

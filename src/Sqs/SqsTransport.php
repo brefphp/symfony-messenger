@@ -6,6 +6,7 @@ use Aws\Sqs\SqsClient;
 use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -32,6 +33,10 @@ class SqsTransport implements TransportInterface
 
     public function send(Envelope $envelope): Envelope
     {
+        /** @var DelayStamp|null $delayStamp */
+        $delayStamp = $envelope->last(DelayStamp::class);
+        $delay = $delayStamp ? $delayStamp->getDelay() : 0;
+
         $encodedMessage = $this->serializer->encode($envelope);
 
         $headers = $encodedMessage['headers'] ?? [];
@@ -44,6 +49,7 @@ class SqsTransport implements TransportInterface
             ],
             'MessageBody' => $encodedMessage['body'],
             'QueueUrl' => $this->queueUrl,
+            'DelaySeconds' => $delay,
         ];
 
         if (null !== $this->messageGroupId) {

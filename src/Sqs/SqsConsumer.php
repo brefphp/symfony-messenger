@@ -86,7 +86,6 @@ class SqsConsumer
 
             $this->dispatchEvent(new WorkerMessageFailedEvent($envelope, $this->transportName, $throwable));
 
-            // This is our way to reject the message.
             return;
         }
 

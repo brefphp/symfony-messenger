@@ -35,7 +35,7 @@ class SqsTransport implements TransportInterface
     {
         /** @var DelayStamp|null $delayStamp */
         $delayStamp = $envelope->last(DelayStamp::class);
-        $delay = $delayStamp ? $delayStamp->getDelay() : 0;
+        $delay = $delayStamp ? ((int) $delayStamp->getDelay()/1000) : 0;
 
         $encodedMessage = $this->serializer->encode($envelope);
 

@@ -31,7 +31,7 @@ class BrefMessengerExtension extends Extension
 
         foreach ($config['consumers'] as $transportName => $consumerConfig) {
             $definition = new ChildDefinition($consumerConfig['service']);
-            $definition->addTag('bref_messenger.consumer');
+            $definition->addTag('bref_messenger.consumer', ['transport' => $transportName, 'allow_no_transport'=>$consumerConfig['no_transport']]);
 
             if (is_subclass_of($consumerConfig['service'], AbstractConsumer::class)) {
                 // Add parameters to it if we know what type of class it is.

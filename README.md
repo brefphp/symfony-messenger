@@ -175,6 +175,7 @@ bref_messenger:
     consumers:
         s3:
             service: 'Bref\Messenger\Service\S3\S3Consumer'
+            no_transport: true
 ```
 
 ```php

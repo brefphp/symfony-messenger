@@ -1,47 +1,36 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Sqs;
+namespace Bref\Messenger\Service;
 
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
-use Symfony\Component\Messenger\Exception\RejectRedeliveredMessageException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ConsumedByWorkerStamp;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
-use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-/**
- * Class that consumes messages when SQS triggers our Lambda with messages.
- *
- * This class will put those messages back onto the Symfony Messenger message bus
- * so that these messages are handled by their handlers.
- */
-class SqsConsumer
+abstract class AbstractConsumer implements Consumer
 {
     /** @var MessageBusInterface */
     private $bus;
     /** @var SerializerInterface */
-    private $serializer;
+    protected $serializer;
     /** @var LoggerInterface */
-    private $logger;
+    protected $logger;
     /** @var string */
     private $transportName;
-    /**
-     * @var EventDispatcherInterface|null
-     */
+    /** @var EventDispatcherInterface|null */
     private $eventDispatcher;
 
     public function __construct(
+        LoggerInterface $logger,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        LoggerInterface $logger,
         string $transportName,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
@@ -53,32 +42,21 @@ class SqsConsumer
     }
 
     /**
-     * @param mixed $event
+     * @param mixed $event from the outside world.
      */
-    public function consumeLambdaEvent($event): void
-    {
-        if (! is_array($event) || ! isset($event['Records'])) {
-            throw new RuntimeException('The Lambda event data is not a SQS event');
-        }
+    abstract public function consume(string $type, $event): void;
 
-        foreach ($event['Records'] as $record) {
-            $envelope = $this->serializer->decode(['body' => $record['body']]);
-
-            $this->consume($envelope);
-        }
-    }
-
-    private function consume(Envelope $envelope): void
+    final protected function doConsume(Envelope $envelope): void
     {
         $event = new WorkerMessageReceivedEvent($envelope, $this->transportName);
         $this->dispatchEvent($event);
 
-        if (!$event->shouldHandle()) {
+        if (! $event->shouldHandle()) {
             return;
         }
 
         try {
-            $envelope = $this->bus->dispatch($envelope->with(new ReceivedStamp($this->transportName), new ConsumedByWorkerStamp()));
+            $envelope = $this->bus->dispatch($envelope->with(new ReceivedStamp($this->transportName), new ConsumedByWorkerStamp));
         } catch (\Throwable $throwable) {
             if ($throwable instanceof HandlerFailedException) {
                 $envelope = $throwable->getEnvelope();
@@ -91,7 +69,7 @@ class SqsConsumer
 
         $this->dispatchEvent(new WorkerMessageHandledEvent($envelope, $this->transportName));
 
-        if (null !== $this->logger) {
+        if ($this->logger !== null) {
             $message = $envelope->getMessage();
             $context = [
                 'message' => $message,
@@ -101,13 +79,12 @@ class SqsConsumer
         }
     }
 
-    private function dispatchEvent(object $event): void
+    final protected function dispatchEvent(object $event): void
     {
-        if (null === $this->eventDispatcher) {
+        if ($this->eventDispatcher === null) {
             return;
         }
 
         $this->eventDispatcher->dispatch($event);
     }
 }
-

@@ -1,0 +1,26 @@
+framework:
+    messenger:
+        transports:
+            foo: 'sns://arn:aws:sns:us-east-1:1234567890:test'
+        routing:
+            'Bref\Messenger\Test\Resources\TestMessage\TestMessage': foo
+
+
+bref_messenger:
+    consumers:
+        foo:
+            service: 'Bref\Messenger\Service\Sns\SnsConsumer'
+
+services:
+    Aws\Sns\SnsClient:
+        factory: [Aws\Sns\SnsClient, factory]
+        arguments:
+            - credentials: false
+              region: us-east-1
+              version: 'latest'
+              # Mock Guzzle for the tests
+              handler: '@mock_handler'
+
+    mock_handler:
+        class: Aws\MockHandler
+        public: true

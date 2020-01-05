@@ -1,31 +1,23 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Test;
+namespace Bref\Messenger\Test\Functional\Service\Sqs;
 
 use Aws\CommandInterface;
 use Aws\MockHandler;
 use Aws\Result;
-use Bref\Messenger\Sqs\SqsTransport;
-use Bref\Messenger\Sqs\SqsTransportFactory;
-use Bref\Messenger\Test\TestMessage\TestMessage;
-use PHPUnit\Framework\TestCase;
+use Bref\Messenger\Service\Sqs\SqsTransport;
+use Bref\Messenger\Service\Sqs\SqsTransportFactory;
+use Bref\Messenger\Test\Functional\BaseFunctionalTest;
+use Bref\Messenger\Test\Resources\TestMessage\TestMessage;
 use Psr\Http\Message\RequestInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
-class FunctionalTest extends TestCase
+class SqsTransportTest extends BaseFunctionalTest
 {
-    /** @var TestKernel */
-    private $kernel;
-    /** @var ContainerInterface */
-    private $container;
-
-    protected function setUp(): void
+    protected function getDefaultConfig(): array
     {
-        $this->kernel = new TestKernel('test', true);
-        $this->kernel->boot();
-        $this->container = $this->kernel->getContainer()->get('test.service_container');
+        return ['sqs.yaml'];
     }
 
     public function test factory(): void
@@ -34,10 +26,10 @@ class FunctionalTest extends TestCase
         $factory = $this->container->get(SqsTransportFactory::class);
         $this->assertInstanceOf(SqsTransportFactory::class, $factory);
 
-        $this->assertTrue($factory->supports('https://sqs.us-east-1.amazonaws.com/123456789101/test', []));
+        $this->assertTrue($factory->supports('https://sqs.us-east-1.amazonaws.com/1234567890/test', []));
         $this->assertFalse($factory->supports('https://example.com', []));
 
-        $transport = $factory->createTransport('https://sqs.us-east-1.amazonaws.com/123456789101/test', [], new PhpSerializer);
+        $transport = $factory->createTransport('https://sqs.us-east-1.amazonaws.com/1234567890/test', [], new PhpSerializer);
         $this->assertInstanceOf(SqsTransport::class, $transport);
     }
 
@@ -57,6 +49,6 @@ class FunctionalTest extends TestCase
         $bus->dispatch(new TestMessage('hello'));
 
         // Check that the URL is correct
-        $this->assertEquals('https://sqs.us-east-1.amazonaws.com/123456789101/bref-test', $queueUrl);
+        $this->assertEquals('https://sqs.us-east-1.amazonaws.com/1234567890/bref-test', $queueUrl);
     }
 }

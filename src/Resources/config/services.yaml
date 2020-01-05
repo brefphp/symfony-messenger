@@ -1,5 +1,36 @@
 services:
-    Bref\Messenger\Sqs\SqsTransportFactory:
-        tags: ['messenger.transport_factory']
+    Bref\Messenger\Service\ConsumerProvider:
         arguments:
-            $sqs: '@Aws\Sqs\SqsClient'
+            - ~ # Consumer[]
+
+    Bref\Messenger\Service\TypeProvider:
+        arguments:
+            - !tagged_iterator bref_messenger.type_provider
+
+    Bref\Messenger\Service\BrefWorker:
+        public: true
+        arguments:
+            - '@Bref\Messenger\Service\TypeProvider'
+            - '@Bref\Messenger\Service\ConsumerProvider'
+
+    Bref\Messenger\Service\AbstractConsumer:
+        abstract: true
+        arguments:
+            - '@logger'
+            - ~ # MessageBus
+            - ~ # Serializer
+            - ~ # TransportName
+            - ~ # EventDispatcher
+
+    Bref\Messenger\Service\Sqs\SqsConsumer:
+        parent: Bref\Messenger\Service\AbstractConsumer
+        abstract: true
+
+    Bref\Messenger\Service\Sns\SnsConsumer:
+        parent: Bref\Messenger\Service\AbstractConsumer
+        abstract: true
+
+    Bref\Messenger\Service\S3\S3Consumer:
+        parent: Bref\Messenger\Service\AbstractConsumer
+        abstract: true
+

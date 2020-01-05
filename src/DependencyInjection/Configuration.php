@@ -40,9 +40,10 @@ final class Configuration implements ConfigurationInterface
             ->arrayPrototype()
                 ->children()
                     ->scalarNode('service')->isRequired()->info('The service that should handle the event')->example(SqsConsumer::class)->end()
-                    ->scalarNode('bus_service')->defaultValue('messenger.routable_message_bus')->info('The bus to use when consuming messages.')->end()
-                    ->scalarNode('serializer_service')->defaultValue(SerializerInterface::class)->info('The serializer to use when consuming messages.')->end()
-                    ->booleanNode('use_symfony_retry_strategies')->defaultFalse()->info('If enabled, retries are handled like in a normal Symfony application. When disabled, AWS will handle the reties.')->end()
+                    ->scalarNode('bus')->defaultValue('messenger.routable_message_bus')->info('The bus to use when consuming messages.')->end()
+                    ->scalarNode('serializer')->defaultValue(SerializerInterface::class)->info('The serializer to use when consuming messages.')->end()
+                    ->booleanNode('use_symfony_retry_strategies')->defaultTrue()->info('If enabled, retries are handled like in a normal Symfony application. When disabled, AWS will handle the reties.')->end()
+                    ->booleanNode('no_transport')->defaultFalse()->info('Set to true if there is no transport for this consumer')->end()
                 ->end()
             ->end()
         ;

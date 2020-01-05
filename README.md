@@ -95,8 +95,8 @@ lambda(function ($event) {
     $kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
     $kernel->boot();
 
-    $sqsConsumer = $kernel->getContainer()->get(BrefWorker::class);
-    $sqsConsumer->consumeLambdaEvent($event);
+    $worker = $kernel->getContainer()->get(BrefWorker::class);
+    $worker->consumeLambdaEvent($event);
 });
 ```
 

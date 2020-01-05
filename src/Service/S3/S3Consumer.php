@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Bref\Messenger\Service\Sqs;
+namespace Bref\Messenger\Service\S3;
 
 use Bref\Messenger\Exception\InvalidEventException;
 use Bref\Messenger\Exception\TypeNotSupportedException;
+use Bref\Messenger\Message\S3Event;
 use Bref\Messenger\Service\AbstractConsumer;
+use Symfony\Component\Messenger\Envelope;
 
-class SqsConsumer extends AbstractConsumer
+class S3Consumer extends AbstractConsumer
 {
     public function consume(string $type, $event): void
     {
@@ -21,14 +23,12 @@ class SqsConsumer extends AbstractConsumer
         }
 
         foreach ($event['Records'] as $record) {
-            $envelope = $this->serializer->decode(['body' => $record['body']]);
-
-            $this->doConsume($envelope);
+            $this->doConsume(new Envelope(new S3Event($record)));
         }
     }
 
     public static function supportedTypes(): array
     {
-        return ['sqs'];
+        return ['s3'];
     }
 }

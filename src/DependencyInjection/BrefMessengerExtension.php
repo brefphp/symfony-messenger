@@ -3,7 +3,10 @@
 namespace Bref\Messenger\DependencyInjection;
 
 use Bref\Messenger\Service\AbstractConsumer;
+use Bref\Messenger\Service\Sns\SnsConsumer;
+use Bref\Messenger\Service\Sqs\SqsConsumer;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Loader\FileLoader;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -13,6 +16,11 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class BrefMessengerExtension extends Extension
 {
+    private $classToServiceDefinitionFile = [
+        SnsConsumer::class => 'sns.yaml',
+        SqsConsumer::class => 'sqs.yaml',
+    ];
+
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
@@ -25,9 +33,11 @@ class BrefMessengerExtension extends Extension
             $definition = new ChildDefinition($consumerConfig['service']);
             $definition->addTag('bref_messenger.consumer');
 
-            // Add parameters to it.
             if (is_subclass_of($consumerConfig['service'], AbstractConsumer::class)) {
-                $definition->replaceArgument(2, new Reference($consumerConfig['bus_service']));
+                // Add parameters to it if we know what type of class it is.
+                $this->includeServiceDefintion($loader, $consumerConfig['bus_service']);
+                $definition->replaceArgument(1, new Reference($consumerConfig['bus_service']));
+                $definition->replaceArgument(2, new Reference($consumerConfig['serializer_service']));
                 $definition->replaceArgument(3, $transportName);
                 if ($consumerConfig['use_symfony_retry_strategies']) {
                     $definition->replaceArgument(4, new Reference(EventDispatcherInterface::class));
@@ -37,6 +47,15 @@ class BrefMessengerExtension extends Extension
             }
             $container->setDefinition('bref.messenger.consumer_'.$transportName, $definition);
         }
+    }
 
+    private function includeServiceDefintion(FileLoader $loader, string $class)
+    {
+        if (isset($this->classToServiceDefinitionFile[$class])) {
+            $loader->load($this->classToServiceDefinitionFile[$class]);
+
+            // Remove it so we dont load it twice.
+            unset($this->classToServiceDefinitionFile[$class]);
+        }
     }
 }

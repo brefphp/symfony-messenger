@@ -145,7 +145,7 @@ framework:
     messenger:
         transports:
             my_sns: 
-                dsn: 'sns://arn:aws:sns:us-east-1:403367587399:foobar'
+                dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
 bref_messenger:
     consumers:
@@ -504,7 +504,7 @@ framework:
             failed: 'doctrine://default?queue_name=failed'
             sync: 'sync://'
             workqueue: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-            notification: 'sns://arn:aws:sns:us-east-1:403367587399:foobar'
+            notification: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
         routing:
             'App\Message\Ping': workqueue

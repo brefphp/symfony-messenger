@@ -14,9 +14,6 @@ final class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder('bref_messenger');
 
         $treeBuilder->getRootNode()
-            ->children()
-                ->scalarNode('foo')->isRequired()->cannotBeEmpty()->end()
-            ->end()
             ->append($this->addConsumesNode())
         ->end();
 

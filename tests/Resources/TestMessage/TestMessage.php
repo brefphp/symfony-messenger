@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Test\TestMessage;
+namespace Bref\Messenger\Test\Resources\TestMessage;
 
 class TestMessage
 {

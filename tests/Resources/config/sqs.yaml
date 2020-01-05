@@ -1,12 +1,16 @@
-framework:
-    secret: foo
-    test: true
 
+framework:
     messenger:
         transports:
-            foo: 'https://sqs.us-east-1.amazonaws.com/123456789101/bref-test'
+            foo: 'https://sqs.us-east-1.amazonaws.com/1234567890/bref-test'
         routing:
-            'Bref\Messenger\Test\TestMessage\TestMessage': foo
+            'Bref\Messenger\Test\Resources\TestMessage\TestMessage': foo
+
+
+bref_messenger:
+    consumers:
+        foo:
+            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
 
 services:
     Aws\Sqs\SqsClient:

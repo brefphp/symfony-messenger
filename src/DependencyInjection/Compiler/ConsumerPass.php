@@ -41,7 +41,7 @@ class ConsumerPass implements CompilerPassInterface
             $def = $container->getDefinition($id);
             $class = $def->getClass();
             while ($class === null) {
-                if (!$def instanceof ChildDefinition) {
+                if (! $def instanceof ChildDefinition) {
                     throw new \RuntimeException(sprintf('Could not get class from definition: "%s"', $id));
                 }
                 $def = $container->getDefinition($def->getParent());

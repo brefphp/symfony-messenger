@@ -3,17 +3,14 @@
 namespace Bref\Messenger\Service;
 
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
-use Symfony\Component\Messenger\Exception\RejectRedeliveredMessageException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ConsumedByWorkerStamp;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
-use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -54,12 +51,12 @@ abstract class AbstractConsumer implements Consumer
         $event = new WorkerMessageReceivedEvent($envelope, $this->transportName);
         $this->dispatchEvent($event);
 
-        if (!$event->shouldHandle()) {
+        if (! $event->shouldHandle()) {
             return;
         }
 
         try {
-            $envelope = $this->bus->dispatch($envelope->with(new ReceivedStamp($this->transportName), new ConsumedByWorkerStamp()));
+            $envelope = $this->bus->dispatch($envelope->with(new ReceivedStamp($this->transportName), new ConsumedByWorkerStamp));
         } catch (\Throwable $throwable) {
             if ($throwable instanceof HandlerFailedException) {
                 $envelope = $throwable->getEnvelope();
@@ -72,7 +69,7 @@ abstract class AbstractConsumer implements Consumer
 
         $this->dispatchEvent(new WorkerMessageHandledEvent($envelope, $this->transportName));
 
-        if (null !== $this->logger) {
+        if ($this->logger !== null) {
             $message = $envelope->getMessage();
             $context = [
                 'message' => $message,
@@ -84,11 +81,10 @@ abstract class AbstractConsumer implements Consumer
 
     final protected function dispatchEvent(object $event): void
     {
-        if (null === $this->eventDispatcher) {
+        if ($this->eventDispatcher === null) {
             return;
         }
 
         $this->eventDispatcher->dispatch($event);
     }
 }
-

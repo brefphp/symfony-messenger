@@ -8,8 +8,8 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class BrefMessengerBundle extends Bundle
 {
-    public function build(ContainerBuilder $container)
+    public function build(ContainerBuilder $container): void
     {
-        $container->addCompilerPass(new ConsumerPass());
+        $container->addCompilerPass(new ConsumerPass);
     }
 }

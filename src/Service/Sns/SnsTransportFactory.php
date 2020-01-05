@@ -24,6 +24,6 @@ class SnsTransportFactory implements TransportFactoryInterface
 
     public function supports(string $dsn, array $options): bool
     {
-        return 0 === strpos($dsn, 'sns://arn:aws:sns:');
+        return strpos($dsn, 'sns://arn:aws:sns:') === 0;
     }
 }

@@ -1,12 +1,8 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Bref\Messenger\DependencyInjection;
 
-
 use Bref\Messenger\Service\Sqs\SqsConsumer;
-use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
@@ -31,7 +27,7 @@ final class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder('consumers');
 
-        $node = $treeBuilder->getRootNode()
+        return $treeBuilder->getRootNode()
             ->isRequired()
             ->requiresAtLeastOneElement()
             ->fixXmlConfig('consumer')
@@ -45,9 +41,6 @@ final class Configuration implements ConfigurationInterface
                     ->booleanNode('use_symfony_retry_strategies')->defaultTrue()->info('If enabled, retries are handled like in a normal Symfony application. When disabled, AWS will handle the reties.')->end()
                     ->booleanNode('no_transport')->defaultFalse()->info('Set to true if there is no transport for this consumer')->end()
                 ->end()
-            ->end()
-        ;
-
-        return $node;
+            ->end();
     }
 }

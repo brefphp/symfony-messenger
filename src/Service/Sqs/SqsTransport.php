@@ -7,7 +7,6 @@ use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Throwable;
@@ -52,7 +51,7 @@ class SqsTransport implements TransportInterface
             'DelaySeconds' => $delay,
         ];
 
-        if (null !== $this->messageGroupId) {
+        if ($this->messageGroupId !== null) {
             $arguments['MessageGroupId'] = $this->messageGroupId;
         }
 

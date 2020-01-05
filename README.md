@@ -219,22 +219,22 @@ functions:
         layers:
             - ${bref:layer.php-74}
         events:
-            -   sqs:
-                    arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue
-                    # Only 1 item at a time to simplify error handling
-                    batchSize: 1
+            - sqs:
+                arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue
+                # Only 1 item at a time to simplify error handling
+                batchSize: 1
 
-            -   sqs:
-                    arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue.fifo
-                    batchSize: 1
+            - sqs:
+                arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue.fifo
+                batchSize: 1
 
-            -   sns:
-                  arn: arn:aws:sns:us-east-1:1234567890:my_sns_topic
+            - sns:
+                arn: arn:aws:sns:us-east-1:1234567890:my_sns_topic
 
-            -   s3:
-                  bucket: my-test-bucket
-                  event: s3:ObjectCreated:*
-                  existing: true
+            - s3:
+                bucket: my-test-bucket
+                event: s3:ObjectCreated:*
+                existing: true
 
 ```            
 
@@ -446,7 +446,7 @@ services:
             - { name: 'bref_messenger.type_provider' }
 ```
 
-### 2. My consumer
+### 2. Implement `Consumer`
 
 When you create your consumer, you can either use the `Bref\Messenger\Service\AbstractConsumer` 
 or start your own implementation. If the `AbstractConsumer` is used, you cannot change the first

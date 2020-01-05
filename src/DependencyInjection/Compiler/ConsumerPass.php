@@ -1,26 +1,25 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Bref\Messenger\DependencyInjection\Compiler;
 
 use Bref\Messenger\Service\BrefWorker;
 use Bref\Messenger\Service\ConsumerProvider;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 class ConsumerPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
-        if (!$container->has(BrefWorker::class)) {
+        if (! $container->has(BrefWorker::class)) {
             return;
         }
 
         $worker = $container->findDefinition(BrefWorker::class);
         $taggedServices = $container->findTaggedServiceIds('bref_messenger.consumer');
-        if (1 === count($taggedServices)) {
+        if (count($taggedServices) === 1) {
             $id = array_key_first($taggedServices);
             foreach ($taggedServices[$id] as $tag) {
                 $this->verifyTransportExists($container, $tag['transport'] ?? '', $tag['allow_no_transport'] ?? false);
@@ -42,6 +41,9 @@ class ConsumerPass implements CompilerPassInterface
             $def = $container->getDefinition($id);
             $class = $def->getClass();
             while ($class === null) {
+                if (!$def instanceof ChildDefinition) {
+                    throw new \RuntimeException(sprintf('Could not get class from definition: "%s"', $id));
+                }
                 $def = $container->getDefinition($def->getParent());
                 $class = $def->getClass();
             }
@@ -57,7 +59,7 @@ class ConsumerPass implements CompilerPassInterface
     /**
      * @throws \RuntimeException if no transport exists with this name.
      */
-    private function verifyTransportExists(ContainerBuilder $container, string $transportName, bool $allowNoTransport)
+    private function verifyTransportExists(ContainerBuilder $container, string $transportName, bool $allowNoTransport): void
     {
         if (empty($transportName)) {
             throw new \RuntimeException('No "transport" attribute on tag "bref_messenger.consumer"');
@@ -67,10 +69,8 @@ class ConsumerPass implements CompilerPassInterface
             return;
         }
 
-        if (!$container->has('messenger.transport.'.$transportName)) {
+        if (! $container->has('messenger.transport.' . $transportName)) {
             throw new \RuntimeException(sprintf('No transport found with name "%s". Maybe you want to set "bref.consumers.%s.no_transport: true"?', $transportName, $transportName));
         }
-
     }
-
 }

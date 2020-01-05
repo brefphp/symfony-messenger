@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Bref\Messenger\Service\Sqs;
 
@@ -12,7 +10,7 @@ class SqsConsumer extends AbstractConsumer
 {
     public function consume(string $type, $event): void
     {
-        if (!in_array($type, self::supportedTypes())) {
+        if (! in_array($type, self::supportedTypes())) {
             throw TypeNotSupportedException::create($type, self::class, $event);
         }
 

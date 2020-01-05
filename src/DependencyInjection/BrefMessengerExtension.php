@@ -31,7 +31,7 @@ class BrefMessengerExtension extends Extension
 
         foreach ($config['consumers'] as $transportName => $consumerConfig) {
             $definition = new ChildDefinition($consumerConfig['service']);
-            $definition->addTag('bref_messenger.consumer', ['transport' => $transportName, 'allow_no_transport'=>$consumerConfig['no_transport']]);
+            $definition->addTag('bref_messenger.consumer', ['transport' => $transportName, 'allow_no_transport' => $consumerConfig['no_transport']]);
 
             if (is_subclass_of($consumerConfig['service'], AbstractConsumer::class)) {
                 // Add parameters to it if we know what type of class it is.
@@ -45,11 +45,11 @@ class BrefMessengerExtension extends Extension
                     $definition->replaceArgument(4, null);
                 }
             }
-            $container->setDefinition('bref.messenger.consumer_'.$transportName, $definition);
+            $container->setDefinition('bref.messenger.consumer_' . $transportName, $definition);
         }
     }
 
-    private function includeServiceDefintion(FileLoader $loader, string $class)
+    private function includeServiceDefintion(FileLoader $loader, string $class): void
     {
         if (isset($this->classToServiceDefinitionFile[$class])) {
             $loader->load($this->classToServiceDefinitionFile[$class]);

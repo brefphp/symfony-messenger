@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Sqs;
+namespace Bref\Messenger\Service;
 
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -17,31 +17,23 @@ use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-/**
- * Class that consumes messages when SQS triggers our Lambda with messages.
- *
- * This class will put those messages back onto the Symfony Messenger message bus
- * so that these messages are handled by their handlers.
- */
-class SqsConsumer
+abstract class AbstractConsumer implements Consumer
 {
     /** @var MessageBusInterface */
     private $bus;
     /** @var SerializerInterface */
-    private $serializer;
+    protected $serializer;
     /** @var LoggerInterface */
-    private $logger;
+    protected $logger;
     /** @var string */
     private $transportName;
-    /**
-     * @var EventDispatcherInterface|null
-     */
+    /** @var EventDispatcherInterface|null */
     private $eventDispatcher;
 
     public function __construct(
-        MessageBusInterface $bus,
         SerializerInterface $serializer,
         LoggerInterface $logger,
+        MessageBusInterface $bus,
         string $transportName,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {
@@ -53,22 +45,11 @@ class SqsConsumer
     }
 
     /**
-     * @param mixed $event
+     * @param mixed $event from the outside world.
      */
-    public function consumeLambdaEvent($event): void
-    {
-        if (! is_array($event) || ! isset($event['Records'])) {
-            throw new RuntimeException('The Lambda event data is not a SQS event');
-        }
+    abstract public function consume(string $type, $event): void;
 
-        foreach ($event['Records'] as $record) {
-            $envelope = $this->serializer->decode(['body' => $record['body']]);
-
-            $this->consume($envelope);
-        }
-    }
-
-    private function consume(Envelope $envelope): void
+    final protected function doConsume(Envelope $envelope): void
     {
         $event = new WorkerMessageReceivedEvent($envelope, $this->transportName);
         $this->dispatchEvent($event);
@@ -101,7 +82,7 @@ class SqsConsumer
         }
     }
 
-    private function dispatchEvent(object $event): void
+    final protected function dispatchEvent(object $event): void
     {
         if (null === $this->eventDispatcher) {
             return;

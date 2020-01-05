@@ -54,7 +54,7 @@ class DefaultController extends AbstractController
 {
     public function index()
     {
-        $this->dispatchMessage(new App\Message\MyMessage());
+        $this->dispatchMessage(new \App\Message\MyMessage());
     }
 }
 ```
@@ -70,7 +70,7 @@ We can create a Lambda to do that in `serverless.yml`:
 ```yaml
 functions:
     worker:
-        handler: consumer.php
+        handler: bin/consumer.php
         timeout: 120 # in seconds
         reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
@@ -87,7 +87,7 @@ The Lambda handler will be `consumer.php`, a file we must create:
 ```php
 <?php declare(strict_types=1);
 
-use Bref\Messenger\Sqs\SqsConsumer;
+use Bref\Messenger\Service\BrefWorker;
 
 require __DIR__ . '/config/bootstrap.php';
 
@@ -95,7 +95,7 @@ lambda(function ($event) {
     $kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
     $kernel->boot();
 
-    $sqsConsumer = $kernel->getContainer()->get(SqsConsumer::class);
+    $sqsConsumer = $kernel->getContainer()->get(BrefWorker::class);
     $sqsConsumer->consumeLambdaEvent($event);
 });
 ```

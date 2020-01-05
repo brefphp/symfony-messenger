@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Sqs;
+namespace Bref\Messenger\Service\Sqs;
 
 use Aws\Sqs\SqsClient;
 use Exception;

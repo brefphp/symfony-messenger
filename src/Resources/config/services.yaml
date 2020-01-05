@@ -1,5 +1,30 @@
 services:
-    Bref\Messenger\Sqs\SqsTransportFactory:
+    Bref\Messenger\Service\ConsumerProvider:
+        arguments:
+            - ~ # Consumer[]
+
+    Bref\Messenger\Service\TypeProvider:
+        arguments:
+            - !tagged_iterator bref_messenger.type_provider
+
+    Bref\Messenger\Service\BrefWorker:
+        public: true
+        arguments:
+            - '@Bref\Messenger\Service\TypeProvider'
+            - '@Bref\Messenger\Service\ConsumerProvider'
+
+
+    Bref\Messenger\Service\Sqs\SqsTransportFactory:
         tags: ['messenger.transport_factory']
         arguments:
             $sqs: '@Aws\Sqs\SqsClient'
+
+    Bref\Messenger\Service\Sqs\SqsConsumer:
+        abstract: true
+        arguments:
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - '@logger'
+            - ~ # MessageBus
+            - ~ # TransportName
+            - ~ # EventDispatcher
+

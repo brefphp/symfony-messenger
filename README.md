@@ -166,6 +166,9 @@ The [S3](https://aws.amazon.com/s3/) integration is only a Consumer. That means 
 we will not be able to publish Symfony Messenger messages on S3 but we can get
 notified when a file is uploaded/changed. 
 
+Since the S3 consumer is not connected to any transport we will use `no_transport: true`
+to avoid getting a "Missing transport exception" thrown when building. 
+
 ```yaml
 # config/packages/messenger.yaml
 bref_messenger:
@@ -408,6 +411,114 @@ bref_messenger:
 
 ## Creating your own consumer
 
-If you want to do your own implementation of a consumer
+If you want to do your own implementation of a consumer you need two things: 
+
+1. Make sure the "type" can be read from the Lambda event
+2. An implementation of `Bref\Messenger\Service\Consumer`
+
+### 1. Finding the type
+
+The `Bref\Messenger\Service\TypeProvider` is pretty good at finding the type since
+all(?) AWS Lambda events has a `EventSource` property. But you may want to override 
+this with your own logic: 
+
+```php
+namespace App\Service;
+
+final class MyTypeProvider implements \Bref\Messenger\Service\TypeResolver
+{
+    public function getType(array $event): ?string
+    {
+        if (/*...*/) {
+            return 'my_type';
+        }
+
+        return null;
+    }
+}
+```
+
+```yaml
+services:
+    App\Service\MyTypeProvider:
+        tags: 
+            - { name: 'bref_messenger.type_provider' }
+```
+
+### 2. My consumer
+
+When you create your consumer, you can either use the `Bref\Messenger\Service\AbstractConsumer` 
+or start your own implementation. If the `AbstractConsumer` is used, you cannot change the first
+5 constructor arguments. 
+
+If you write your own implementation you may do as you want. 
+
+```php
+namespace App\Service;
+
+final class MyConsumer implements \Bref\Messenger\Service\Consumer
+{
+    public function consume(string $type, $event): void
+    {
+        // ...
+        $envelope = $this->serializer->decode(['body' => /* ... */ ]);
+
+        // ...
+    }
+
+    public static function supportedTypes(): array
+    {
+        return ['my_type'];
+    }
+}
+```
+
+```yaml
+bref_messenger:
+    consumers:
+        my_special_consumer:
+            service: 'App\Service\MyConsumer'
+```
 
 ## Using more than one consumer
+
+You can of course use as many consumer as you want. Sky is the limit!
+
+```yaml
+framework:
+    messenger:
+        buses:
+            messenger.bus.command:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+
+            messenger.bus.event:
+                default_middleware: allow_no_handlers
+                middleware:
+                    - validation
+                    - doctrine_transaction
+
+        transports:
+            failed: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+            workqueue: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
+            notification: 'sns://arn:aws:sns:us-east-1:403367587399:foobar'
+
+        routing:
+            'App\Message\Ping': workqueue
+            'App\Message\Pong': notification
+
+bref_messenger:
+    consumers:
+        workqueue:
+            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
+
+        notification:
+            service: 'Bref\Messenger\Service\Sns\SnsConsumer'
+
+        s3:
+            service: 'Bref\Messenger\Service\S3\S3Consumer'
+            bus_service: 'messenger.bus.command'
+            no_transport: true
+```

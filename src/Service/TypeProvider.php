@@ -7,7 +7,7 @@ namespace Bref\Messenger\Service;
 use Bref\Messenger\Exception\TypeNotResolvedException;
 
 /**
- * This class can be used to support multiple types in the same application.
+ * Read the event type from most/all AWS events.
  *
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  */

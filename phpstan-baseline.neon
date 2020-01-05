@@ -6,7 +6,7 @@ parameters:
 			path: src/DependencyInjection/Configuration.php
 
 		-
-			message: "#^Call to an undefined method Symfony\\\\Component\\\\Config\\\\Definition\\\\Builder\\\\NodeDefinition\\:\\:requiresAtLeastOneElement\\(\\)\\.$#"
+			message: "#^Call to an undefined method Symfony\\\\Component\\\\Config\\\\Definition\\\\Builder\\\\NodeDefinition\\:\\:fixXmlConfig\\(\\)\\.$#"
 			count: 1
 			path: src/DependencyInjection/Configuration.php
 

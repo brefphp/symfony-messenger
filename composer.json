@@ -30,6 +30,7 @@
         "mnapoli/hard-mode": "^0.2.0",
         "phpstan/phpstan": "^0.12.0",
         "symfony/framework-bundle": "^4.3 || ^5.0",
-        "nyholm/symfony-bundle-test": "^1.6"
+        "nyholm/symfony-bundle-test": "^1.6",
+        "matthiasnoback/symfony-dependency-injection-test": "^4.1"
     }
 }

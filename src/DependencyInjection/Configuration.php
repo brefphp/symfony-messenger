@@ -25,8 +25,6 @@ final class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder('consumers');
 
         return $treeBuilder->getRootNode()
-            ->isRequired()
-            ->requiresAtLeastOneElement()
             ->fixXmlConfig('consumer')
             ->useAttributeAsKey('name')
             ->info('The transport name as key.')

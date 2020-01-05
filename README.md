@@ -167,7 +167,7 @@ we will not be able to publish Symfony Messenger messages on S3 but we can get
 notified when a file is uploaded/changed. 
 
 Since the S3 consumer is not connected to any transport we will use `no_transport: true`
-to avoid getting a "Missing transport exception" thrown when building. 
+to avoid getting a "Missing transport exception" thrown when building the container. 
 
 ```yaml
 # config/packages/messenger.yaml
@@ -297,7 +297,7 @@ bref_messenger:
 
 Make sure you re-run the failure queue time to time:
 
-```
+```yaml
 # serverless.yml
 
 functions:

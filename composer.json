@@ -1,7 +1,7 @@
 {
-    "name": "bref/symfony-messenger-sqs",
+    "name": "bref/symfony-messenger",
     "description": "Symfony Messenger bridge to run with SQS on AWS Lambda with Bref",
-    "keywords": ["bref", "symfony", "messenger", "sqs", "aws", "aws-lambda"],
+    "keywords": ["bref", "symfony", "messenger", "sqs", "sns", "s3", "aws", "aws-lambda"],
     "license": "MIT",
     "type": "library",
     "autoload": {
@@ -22,8 +22,7 @@
         "symfony/config": "^4.3 || ^5.0",
         "symfony/dependency-injection": "^4.3 || ^5.0",
         "symfony/http-kernel": "^4.3 || ^5.0",
-        "symfony/yaml": "^4.3 || ^5.0",
-        "symfony/polyfill-php73": "^1.13"
+        "symfony/yaml": "^4.3 || ^5.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5",

@@ -23,10 +23,10 @@ class SqsTransport implements TransportInterface
     /** @var string|null */
     private $messageGroupId;
 
-    public function __construct(SqsClient $sqs, ?SerializerInterface $serializer, string $queueUrl, ?string $messageGroupId)
+    public function __construct(SqsClient $sqs, SerializerInterface $serializer, string $queueUrl, ?string $messageGroupId)
     {
         $this->sqs = $sqs;
-        $this->serializer = $serializer ?? new PhpSerializer;
+        $this->serializer = $serializer;
         $this->queueUrl = $queueUrl;
         $this->messageGroupId = $messageGroupId;
     }

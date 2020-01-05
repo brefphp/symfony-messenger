@@ -14,20 +14,20 @@ use Psr\Container\ContainerInterface;
  */
 class ConsumerProvider implements Consumer
 {
-    private $locator;
+    private $consumers;
 
-    public function __construct(ContainerInterface $locator)
+    public function __construct(array $consumers)
     {
-        $this->locator = $locator;
+        $this->consumers = $consumers;
     }
 
     public function consume(string $type, array $event): void
     {
-        if (!$this->locator->has($type)) {
+        if (!isset($this->consumers[$type])) {
             throw ConsumerNotFoundException::create($type, $event);
         }
 
-        $this->locator->get($type)->consume($type, $event);
+        $this->consumers[$type]->consume($type, $event);
     }
 
     public static function supportedTypes(): array

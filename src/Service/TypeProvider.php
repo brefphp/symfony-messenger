@@ -36,7 +36,7 @@ final class TypeProvider implements TypeResolver
         if (is_array($event) && isset($event['Records'])) {
             $key = array_key_first($event['Records']);
             $source = $event['Records'][$key]['EventSource'] ?? $event['Records'][$key]['eventSource'] ?? null;
-            if (null !== $source && 1 === preg_match('|^aws:([a-z]+)$|i', (string)$source, $match)) {
+            if (null !== $source && 1 === preg_match('|^aws:([a-z0-9]+)$|i', (string)$source, $match)) {
                 return strtolower($match[1]);
             }
         }

@@ -30,9 +30,19 @@ class ConsumerPass implements CompilerPassInterface
 
         $consumers = [];
         foreach ($taggedServices as $id => $tags) {
-            // add the transport service to the TransportChain service
-            $consumers[] =  new Reference($id);
+            // Get the type from the service and add them to the $consumers array
+            $def = $container->getDefinition($id);
+            $class = $def->getClass();
+            while ($class === null) {
+                $def = $container->getDefinition($def->getParent());
+                $class = $def->getClass();
+            }
+            foreach ($class::supportedTypes() as $type) {
+                $consumers[$type] = new Reference($id);
+            }
         }
+
+        // TODO use a service locator
         $container->findDefinition(ConsumerProvider::class)->replaceArgument(0, $consumers);
     }
 

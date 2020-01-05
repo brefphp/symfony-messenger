@@ -11,18 +11,15 @@ class SqsTransportFactory implements TransportFactoryInterface
 {
     /** @var SqsClient */
     private $sqs;
-    /** @var SerializerInterface|null */
-    private $serializer;
 
-    public function __construct(SqsClient $sqs, ?SerializerInterface $serializer = null)
+    public function __construct(SqsClient $sqs)
     {
         $this->sqs = $sqs;
-        $this->serializer = $serializer;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new SqsTransport($this->sqs, $this->serializer, $dsn, $options['message_group_id'] ?? null);
+        return new SqsTransport($this->sqs, $serializer, $dsn, $options['message_group_id'] ?? null);
     }
 
     public function supports(string $dsn, array $options): bool

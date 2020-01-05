@@ -31,9 +31,9 @@ abstract class AbstractConsumer implements Consumer
     private $eventDispatcher;
 
     public function __construct(
-        SerializerInterface $serializer,
         LoggerInterface $logger,
         MessageBusInterface $bus,
+        SerializerInterface $serializer,
         string $transportName,
         ?EventDispatcherInterface $eventDispatcher = null
     ) {

@@ -6,7 +6,6 @@ use Aws\Sns\SnsClient;
 use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -21,7 +20,7 @@ class SnsTransport implements TransportInterface
     /** @var string */
     private $topic;
 
-    public function __construct(SnsClient $sns, ?SerializerInterface $serializer, string $topic)
+    public function __construct(SnsClient $sns, SerializerInterface $serializer, string $topic)
     {
         $this->sns = $sns;
         $this->serializer = $serializer ?? new PhpSerializer;

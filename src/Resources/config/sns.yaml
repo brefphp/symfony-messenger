@@ -2,6 +2,6 @@ services:
     Bref\Messenger\Service\Sns\SnsTransportFactory:
         tags: ['messenger.transport_factory']
         arguments:
-            $sqs: '@Aws\Sns\SnsClient'
+            - '@Aws\Sns\SnsClient'
 
 

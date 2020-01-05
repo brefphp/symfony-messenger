@@ -11,18 +11,15 @@ class SnsTransportFactory implements TransportFactoryInterface
 {
     /** @var SnsClient */
     private $sns;
-    /** @var SerializerInterface|null */
-    private $serializer;
 
-    public function __construct(SnsClient $sns, ?SerializerInterface $serializer = null)
+    public function __construct(SnsClient $sns)
     {
         $this->sns = $sns;
-        $this->serializer = $serializer;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new SnsTransport($this->sns, $this->serializer, $dsn);
+        return new SnsTransport($this->sns, $serializer, substr($dsn, 6));
     }
 
     public function supports(string $dsn, array $options): bool

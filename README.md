@@ -205,7 +205,7 @@ class S3Handler implements MessageHandlerInterface
 
 ## Serverless configuration
 
-The Serverless configuration is same of all kind Lambda events. You should just 
+The Serverless configuration is the same for all types of Lambda event source. You should just 
 make sure to configure the parameters correctly. You may also add as many events
 as you want. Same type or different types. Mix all you want. 
 
@@ -387,7 +387,7 @@ bref_messenger:
 
 ```
 
-Same thing with the Serializer. You may want to use [Happyr message serializer](https://github.com/Happyr/message-serializer)
+The same applies with the Serializer. You may want to use [Happyr message serializer](https://github.com/Happyr/message-serializer)
 for a more reliable API when sending messages between applications. You need to 
 add the serializer on both the transport and the consumer. 
 
@@ -483,7 +483,7 @@ bref_messenger:
 
 ## Using more than one consumer
 
-You can of course use as many consumer as you want. Sky is the limit!
+You can, of course, use as many consumers as you want. Sky is the limit!
 
 ```yaml
 framework:

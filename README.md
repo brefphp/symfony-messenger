@@ -85,16 +85,24 @@ framework:
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
 bref_messenger:
-    consumers:
-        my_sqs:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
+    sqs: true # Register the SQS transport
 
 services:
-  Aws\Sqs\SqsClient:
-    factory: [Aws\Sqs\SqsClient, factory]
-    arguments:
-      - region: '%env(AWS_REGION)%'
-        version: '2012-11-05'
+    Aws\Sqs\SqsClient:
+        factory: [Aws\Sqs\SqsClient, factory]
+        arguments:
+            - region: '%env(AWS_REGION)%'
+              version: '2012-11-05'
+
+    my_sqs_consumer:
+        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        arguments:
+            - '@Bref\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'my_sqs' # Same as transport name
+        tags:
+            - { name: bref_messenger.consumer }
 ```
 
 #### FIFO Queue
@@ -118,16 +126,24 @@ framework:
                 options: { message_group_id: com_example }
 
 bref_messenger:
-    consumers:
-        my_sqs_fifo:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
+    sqs: true # Register the SQS transport
 
 services:
-  Aws\Sqs\SqsClient:
-    factory: [Aws\Sqs\SqsClient, factory]
-    arguments:
-      - region: '%env(AWS_REGION)%'
-        version: '2012-11-05'
+    Aws\Sqs\SqsClient:
+        factory: [Aws\Sqs\SqsClient, factory]
+        arguments:
+            - region: '%env(AWS_REGION)%'
+              version: '2012-11-05'
+
+    my_fifo_consumer:
+        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        arguments:
+            - '@Bref\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'my_sqs_fifo' # Same as transport name
+        tags:
+            - { name: bref_messenger.consumer }
 ```
 
 ### SNS
@@ -148,16 +164,24 @@ framework:
                 dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
 bref_messenger:
-    consumers:
-        my_sns:
-            service: 'Bref\Messenger\Service\Sns\SnsConsumer'
+    sns: true # Register the SNS transport
 
 services:
-  Aws\Sns\SnsClient:
-    factory: [Aws\Sns\SnsClient, factory]
-    arguments:
-      - region: '%env(AWS_REGION)%'
-        version: '2010-03-31'
+    Aws\Sns\SnsClient:
+        factory: [Aws\Sns\SnsClient, factory]
+        arguments:
+            - region: '%env(AWS_REGION)%'
+              version: '2010-03-31'
+
+    my_sns_consumer:
+        class: Bref\Messenger\Service\Sns\SnsConsumer
+        arguments:
+            - '@Bref\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'my_sns' # Same as transport name
+        tags:
+            - { name: bref_messenger.consumer }
 ```
 
 ### S3
@@ -171,11 +195,24 @@ to avoid getting a "Missing transport exception" thrown when building the contai
 
 ```yaml
 # config/packages/messenger.yaml
-bref_messenger:
-    consumers:
-        s3:
-            service: 'Bref\Messenger\Service\S3\S3Consumer'
-            no_transport: true
+framework:
+    messenger:
+        buses:
+            messenger.bus.command:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+
+services:
+    my_s3_consumer:
+        class: Bref\Messenger\Service\S3\S3Consumer
+        arguments:
+            - '@Bref\Messenger\Service\BusDriver'
+            - '@messenger.bus.command'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 's3' # Not really important here. Just used for logging
+        tags:
+            - { name: bref_messenger.consumer }
 ```
 
 ```php
@@ -240,88 +277,6 @@ functions:
 
 ## Error handling
 
-### The Symfony way
-
-On each consumer you can choose to let Symfony handle failures as described in
-[the documentation](https://symfony.com/doc/current/messenger.html#retries-failures). 
-Example: 
-
-```yaml
-# config/packages/messenger.yaml
-
-framework:
-    messenger:
-        transports:
-            failed: 'doctrine://default?queue_name=failed'
-            workqueue:
-              dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-              retry_strategy:
-                  max_retries: 3
-                  # milliseconds delay
-                  delay: 1000
-                  multiplier: 2
-                  max_delay: 60
-
-bref_messenger:
-    consumers:
-        my_sqs:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
-            use_symfony_retry_strategies: true # default value
-
-# ...
-
-```
-
-The delay is only supported on SQS "normal queue". If you are using SNS or SQS FIFO
-you should use the failure queue directly.
-
-```yaml
-# config/packages/messenger.yaml
-
-framework:
-    messenger:
-        transports:
-            failed: 'doctrine://default?queue_name=failed'
-            workqueue:
-              dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-
-bref_messenger:
-    consumers:
-        my_sqs:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
-            use_symfony_retry_strategies: true # default value
-
-# ...
-
-```
-
-Make sure you re-run the failure queue time to time:
-
-```yaml
-# serverless.yml
-
-functions:
-    website:
-        # ...
-    consumer:
-        # ...
-
-    console:
-        handler: bin/console
-        Timeout: 120 # in seconds
-        layers:
-            - ${bref:layer.php-74}
-            - ${bref:layer.console}
-        events:
-            - schedule:
-                  rate: rate(30 minutes)
-                  input:
-                      cli: messenger:consume failed --time-limit=60 --limit=50
-
-```
-
-### The AWS way
-
 > This section is really raw, feel free to contribute to improve it.
 
 Alternative to the "Symfony way" you may allow AWS infrastructure to handle errors:
@@ -335,11 +290,26 @@ framework:
             workqueue:
               dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
+
 bref_messenger:
-    consumers:
-        my_sqs:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
-            use_symfony_retry_strategies: false
+    sqs: true # Register the SQS transport
+
+services:
+    Aws\Sqs\SqsClient:
+        factory: [Aws\Sqs\SqsClient, factory]
+        arguments:
+            - region: '%env(AWS_REGION)%'
+              version: '2012-11-05'
+
+    my_sqs_consumer:
+        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        arguments:
+            - '@Bref\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'workqueue' # Same as transport name
+        tags:
+            - { name: bref_messenger.consumer }
 # ...
 
 ```
@@ -369,23 +339,12 @@ bref_messenger:
 
 ## Customize the consumer
 
-Each consumer can be configured with a bus and serializer. The default bus is the
+Each consumer is just an service implementing `Bref\Messenger\Service\Consumer`. 
+They may be configured how ever you want. A good bus to have as default is the
 [RoutableMessageBus](https://github.com/symfony/symfony/blob/4.4/src/Symfony/Component/Messenger/RoutableMessageBus.php)
 which will automatically find the correct bus depending on your transport name. 
-You may provide any service that implements `Symfony\Component\Messenger\MessageBusInterface`.
 
-
-```yaml
-# config/packages/messenger.yaml
-
-bref_messenger:
-    consumers:
-        my_sqs:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
-            bus: 'messenger.bus.command'
-# ...
-
-```
+You may of course use a specific bus as with the S3 example. 
 
 The same applies with the Serializer. You may want to use [Happyr message serializer](https://github.com/Happyr/message-serializer)
 for a more reliable API when sending messages between applications. You need to 
@@ -393,20 +352,32 @@ add the serializer on both the transport and the consumer.
 
 ```yaml
 # config/packages/messenger.yaml
-
 framework:
     messenger:
         transports:
-            workqueue:
-              dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-              serializer: 'Happyr\MessageSerializer\Serializer'
+            workqueue: 
+                dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
+                serializer: 'Happyr\MessageSerializer\Serializer'
 
 bref_messenger:
-    consumers:
-        my_sqs:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
-            serializer: 'Happyr\MessageSerializer\Serializer'
-# ...
+    sqs: true # Register the SQS transport
+
+services:
+    Aws\Sqs\SqsClient:
+        factory: [Aws\Sqs\SqsClient, factory]
+        arguments:
+            - region: '%env(AWS_REGION)%'
+              version: '2012-11-05'
+
+    my_sqs_consumer:
+        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        arguments:
+            - '@Bref\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Happyr\MessageSerializer\Serializer'
+            - 'workqueue' # Same as transport name
+        tags:
+            - { name: bref_messenger.consumer }
 
 ```
 
@@ -446,13 +417,10 @@ services:
             - { name: 'bref_messenger.type_provider' }
 ```
 
-### 2. Implement `Consumer`
+### 2. Implement `Bref\Messenger\Service\Consumer`
 
-When you create your consumer, you can either use the `Bref\Messenger\Service\AbstractConsumer` 
-or start your own implementation. If the `AbstractConsumer` is used, you cannot change the first
-5 constructor arguments. 
-
-If you write your own implementation you may do as you want. 
+This class may do every crazy thing you may want. Remember that if you want
+to share your Consumer implementation, it is a good idea to use `Bref\Messenger\Service\BusDriver`
 
 ```php
 namespace App\Service;
@@ -472,13 +440,6 @@ final class MyConsumer implements \Bref\Messenger\Service\Consumer
         return ['my_type'];
     }
 }
-```
-
-```yaml
-bref_messenger:
-    consumers:
-        my_special_consumer:
-            service: 'App\Service\MyConsumer'
 ```
 
 ## Using more than one consumer
@@ -511,15 +472,35 @@ framework:
             'App\Message\Pong': notification
 
 bref_messenger:
-    consumers:
-        workqueue:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
+    sns: true
+    sqs: true
 
-        notification:
-            service: 'Bref\Messenger\Service\Sns\SnsConsumer'
+services:
+    _defaults:
+        autowire: true
+    
+    my_sqs_consumer:
+        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        arguments:
+            $bus: '@messenger.routable_message_bus'
+            $transportName: 'workqueue'
+        tags:
+            - { name: bref_messenger.consumer }
 
-        s3:
-            service: 'Bref\Messenger\Service\S3\S3Consumer'
-            bus_service: 'messenger.bus.command'
-            no_transport: true
+    my_sns_consumer:
+        class: Bref\Messenger\Service\Sns\SnsConsumer
+        arguments:
+            $bus: '@messenger.routable_message_bus'
+            $transportName: 'notification'
+        tags:
+            - { name: bref_messenger.consumer }
+
+    my_s3_consumer:
+        class: Bref\Messenger\Service\S3\S3Consumer
+        arguments:
+            $bus: '@messenger.bus.command'
+            $transportName: 's3'
+        tags:
+            - { name: bref_messenger.consumer }
+
 ```

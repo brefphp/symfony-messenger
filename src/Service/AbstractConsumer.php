@@ -4,10 +4,6 @@ namespace Bref\Messenger\Service;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
-use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
-use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
-use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ConsumedByWorkerStamp;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
@@ -40,7 +36,6 @@ abstract class AbstractConsumer implements Consumer
         $this->transportName = $transportName;
         $this->eventDispatcher = $eventDispatcher;
     }
-
 
     final protected function doConsume(Envelope $envelope): void
     {

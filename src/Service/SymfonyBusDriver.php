@@ -15,8 +15,6 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Using this dispatched will allow use of Symfony's failure strategies.
- *
- * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  */
 class SymfonyBusDriver implements BusDriver
 {

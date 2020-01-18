@@ -21,9 +21,6 @@ class ConsumerPass implements CompilerPassInterface
         $taggedServices = $container->findTaggedServiceIds('bref_messenger.consumer');
         if (count($taggedServices) === 1) {
             $id = array_key_first($taggedServices);
-            foreach ($taggedServices[$id] as $tag) {
-                $this->verifyTransportExists($container, $tag['transport'] ?? '', $tag['allow_no_transport'] ?? false);
-            }
 
             // lets make things simple. Everything that comes in, goes to this consumer.
             $worker->replaceArgument(1, new Reference($id));
@@ -33,10 +30,6 @@ class ConsumerPass implements CompilerPassInterface
 
         $consumers = [];
         foreach ($taggedServices as $id => $tags) {
-            foreach ($tags as $tag) {
-                $this->verifyTransportExists($container, $tag['transport'] ?? '', $tag['allow_no_transport'] ?? false);
-            }
-
             // Get the type from the service and add them to the $consumers array
             $def = $container->getDefinition($id);
             $class = $def->getClass();
@@ -54,23 +47,5 @@ class ConsumerPass implements CompilerPassInterface
 
         // TODO use a service locator
         $container->findDefinition(ConsumerProvider::class)->replaceArgument(0, $consumers);
-    }
-
-    /**
-     * @throws \RuntimeException if no transport exists with this name.
-     */
-    private function verifyTransportExists(ContainerBuilder $container, string $transportName, bool $allowNoTransport): void
-    {
-        if (empty($transportName)) {
-            throw new \RuntimeException('No "transport" attribute on tag "bref_messenger.consumer"');
-        }
-
-        if ($allowNoTransport) {
-            return;
-        }
-
-        if (! $container->has('messenger.transport.' . $transportName)) {
-            throw new \RuntimeException(sprintf('No transport found with name "%s". Maybe you want to set "bref.consumers.%s.no_transport: true"?', $transportName, $transportName));
-        }
     }
 }

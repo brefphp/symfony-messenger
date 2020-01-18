@@ -35,21 +35,16 @@ class BrefMessengerExtension extends Extension
 
             if (is_subclass_of($consumerConfig['service'], AbstractConsumer::class)) {
                 // Add parameters to it if we know what type of class it is.
-                $this->includeServiceDefintion($loader, $consumerConfig['service']);
+                $this->includeServiceDefinition($loader, $consumerConfig['service']);
                 $definition->replaceArgument(1, new Reference($consumerConfig['bus']));
                 $definition->replaceArgument(2, new Reference($consumerConfig['serializer']));
                 $definition->replaceArgument(3, $transportName);
-                if ($consumerConfig['use_symfony_retry_strategies']) {
-                    $definition->replaceArgument(4, new Reference(EventDispatcherInterface::class));
-                } else {
-                    $definition->replaceArgument(4, null);
-                }
             }
             $container->setDefinition('bref.messenger.consumer_' . $transportName, $definition);
         }
     }
 
-    private function includeServiceDefintion(FileLoader $loader, string $class): void
+    private function includeServiceDefinition(FileLoader $loader, string $class): void
     {
         if (isset($this->classToServiceDefinitionFile[$class])) {
             $loader->load($this->classToServiceDefinitionFile[$class]);

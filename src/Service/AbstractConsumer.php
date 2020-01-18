@@ -41,50 +41,9 @@ abstract class AbstractConsumer implements Consumer
         $this->eventDispatcher = $eventDispatcher;
     }
 
-    /**
-     * @param mixed $event from the outside world.
-     */
-    abstract public function consume(string $type, $event): void;
 
     final protected function doConsume(Envelope $envelope): void
     {
-        $event = new WorkerMessageReceivedEvent($envelope, $this->transportName);
-        $this->dispatchEvent($event);
-
-        if (! $event->shouldHandle()) {
-            return;
-        }
-
-        try {
-            $envelope = $this->bus->dispatch($envelope->with(new ReceivedStamp($this->transportName), new ConsumedByWorkerStamp));
-        } catch (\Throwable $throwable) {
-            if ($throwable instanceof HandlerFailedException) {
-                $envelope = $throwable->getEnvelope();
-            }
-
-            $this->dispatchEvent(new WorkerMessageFailedEvent($envelope, $this->transportName, $throwable));
-
-            return;
-        }
-
-        $this->dispatchEvent(new WorkerMessageHandledEvent($envelope, $this->transportName));
-
-        if ($this->logger !== null) {
-            $message = $envelope->getMessage();
-            $context = [
-                'message' => $message,
-                'class' => \get_class($message),
-            ];
-            $this->logger->info('{class} was handled successfully (acknowledging to transport).', $context);
-        }
-    }
-
-    final protected function dispatchEvent(object $event): void
-    {
-        if ($this->eventDispatcher === null) {
-            return;
-        }
-
-        $this->eventDispatcher->dispatch($event);
+        $this->dispatcher->dispatchEnvelope($envelope->with(new ReceivedStamp($this->transportName), new ConsumedByWorkerStamp));
     }
 }

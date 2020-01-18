@@ -279,40 +279,6 @@ functions:
 
 > This section is really raw, feel free to contribute to improve it.
 
-Alternative to the "Symfony way" you may allow AWS infrastructure to handle errors:
-
-```yaml
-# config/packages/messenger.yaml
-
-framework:
-    messenger:
-        transports:
-            workqueue:
-              dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-
-
-bref_messenger:
-    sqs: true # Register the SQS transport
-
-services:
-    Aws\Sqs\SqsClient:
-        factory: [Aws\Sqs\SqsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2012-11-05'
-
-    my_sqs_consumer:
-        class: Bref\Messenger\Service\Sqs\SqsConsumer
-        arguments:
-            - '@Bref\Messenger\Service\BusDriver'
-            - '@messenger.routable_message_bus'
-            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
-            - 'workqueue' # Same as transport name
-        tags:
-            - { name: bref_messenger.consumer }
-# ...
-
-```
 
 ```yaml
 # serverless.yml

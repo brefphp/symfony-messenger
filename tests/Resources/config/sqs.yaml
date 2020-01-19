@@ -8,9 +8,7 @@ framework:
 
 
 bref_messenger:
-    consumers:
-        foo:
-            service: 'Bref\Symfony\Messenger\Service\Sqs\SqsConsumer'
+    sqs: true
 
 services:
     Aws\Sqs\SqsClient:
@@ -24,3 +22,13 @@ services:
     mock_handler:
         class: Aws\MockHandler
         public: true
+
+    my_sqs_consumer:
+        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        arguments:
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'my_sqs' # Same as transport name
+        tags:
+            - { name: bref_messenger.consumer }

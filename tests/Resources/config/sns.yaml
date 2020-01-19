@@ -7,9 +7,7 @@ framework:
 
 
 bref_messenger:
-    consumers:
-        foo:
-            service: 'Bref\Symfony\Messenger\Service\Sns\SnsConsumer'
+    sns: true
 
 services:
     Aws\Sns\SnsClient:
@@ -24,3 +22,13 @@ services:
     mock_handler:
         class: Aws\MockHandler
         public: true
+
+    my_sns_consumer:
+        class: Bref\Messenger\Service\Sns\SnsConsumer
+        arguments:
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'foo'
+        tags:
+            - { name: bref_messenger.consumer }

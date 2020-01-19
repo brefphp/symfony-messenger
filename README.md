@@ -279,6 +279,12 @@ functions:
 
 > This section is really raw, feel free to contribute to improve it.
 
+When a message fails, by default it will go back to the SQS queue. It will be
+retied until the end of time. 
+
+If you are using SNS and the handler fails, then your message is forgotten. 
+
+Below is some config to add a deal letter queue. 
 
 ```yaml
 # serverless.yml

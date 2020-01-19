@@ -185,59 +185,7 @@ services:
             - 'my_sns' # Same as transport name
         tags:
             - { name: bref_messenger.consumer }
-```
 
-### S3
-
-The [S3](https://aws.amazon.com/s3/) integration is only a Consumer. That means that
-we will not be able to publish Symfony Messenger messages on S3 but we can get
-notified when a file is uploaded/changed. 
-
-```yaml
-# config/packages/messenger.yaml
-framework:
-    messenger:
-        buses:
-            messenger.bus.command:
-                middleware:
-                    - validation
-                    - doctrine_transaction
-
-services:
-    my_s3_consumer:
-        class: Bref\Messenger\Service\S3\S3Consumer
-        arguments:
-            - '@Bref\Messenger\Service\BusDriver'
-            - '@messenger.bus.command'
-            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
-            - 's3' # Not really important here. Just used for logging
-        tags:
-            - { name: bref_messenger.consumer }
-```
-
-```php
-
-namespace App\Message;
-
-use Bref\Messenger\Message\S3Event;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
-
-class S3Handler implements MessageHandlerInterface
-{
-    private $logger;
-
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    public function __invoke(S3Event $event)
-    {
-        $this->logger->alert('Got S3 event');
-        $this->logger->alert(json_encode($event->getRecord()));
-    }
-}
 ```
 
 ## Serverless configuration
@@ -267,11 +215,6 @@ functions:
 
             - sns:
                 arn: arn:aws:sns:us-east-1:1234567890:my_sns_topic
-
-            - s3:
-                bucket: my-test-bucket
-                event: s3:ObjectCreated:*
-                existing: true
 
 ```            
 
@@ -315,8 +258,6 @@ Each consumer is just an service implementing `Bref\Messenger\Service\Consumer`.
 They may be configured how ever you want. A good bus to have as default is the
 [RoutableMessageBus](https://github.com/symfony/symfony/blob/4.4/src/Symfony/Component/Messenger/RoutableMessageBus.php)
 which will automatically find the correct bus depending on your transport name. 
-
-You may of course use a specific bus as with the S3 example. 
 
 The same applies with the Serializer. You may want to use [Happyr message serializer](https://github.com/Happyr/message-serializer)
 for a more reliable API when sending messages between applications. You need to 
@@ -464,14 +405,6 @@ services:
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'notification'
-        tags:
-            - { name: bref_messenger.consumer }
-
-    my_s3_consumer:
-        class: Bref\Messenger\Service\S3\S3Consumer
-        arguments:
-            $bus: '@messenger.bus.command'
-            $transportName: 's3'
         tags:
             - { name: bref_messenger.consumer }
 

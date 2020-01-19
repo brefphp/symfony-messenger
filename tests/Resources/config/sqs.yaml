@@ -4,13 +4,13 @@ framework:
         transports:
             foo: 'https://sqs.us-east-1.amazonaws.com/1234567890/bref-test'
         routing:
-            'Bref\Messenger\Test\Resources\TestMessage\TestMessage': foo
+            'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
 
 
 bref_messenger:
     consumers:
         foo:
-            service: 'Bref\Messenger\Service\Sqs\SqsConsumer'
+            service: 'Bref\Symfony\Messenger\Service\Sqs\SqsConsumer'
 
 services:
     Aws\Sqs\SqsClient:

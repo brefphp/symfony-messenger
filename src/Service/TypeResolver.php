@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service;
+namespace Bref\Symfony\Messenger\Service;
 
 /**
  * An implementing class should look at the $event and return a string type like "sqs", "sns", etc

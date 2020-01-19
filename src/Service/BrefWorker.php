@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service;
+namespace Bref\Symfony\Messenger\Service;
 
-use Bref\Messenger\Exception\TypeNotResolvedException;
+use Bref\Symfony\Messenger\Exception\TypeNotResolvedException;
 
 /**
  * Class that consumes messages when SQS/SNS triggers our Lambda with messages.

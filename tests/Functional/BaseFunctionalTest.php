@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Test\Functional;
+namespace Bref\Symfony\Messenger\Test\Functional;
 
-use Bref\Messenger\BrefMessengerBundle;
+use Bref\Symfony\Messenger\BrefMessengerBundle;
 use Nyholm\BundleTest\BaseBundleTestCase;
 use Symfony\Component\DependencyInjection\Container;
 

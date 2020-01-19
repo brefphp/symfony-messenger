@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service\Sns;
+namespace Bref\Symfony\Messenger\Service\Sns;
 
 use Aws\Sns\SnsClient;
 use Exception;

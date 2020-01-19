@@ -6,12 +6,12 @@
     "type": "library",
     "autoload": {
         "psr-4": {
-            "Bref\\Messenger\\": "src/"
+            "Bref\\Symfony\\Messenger\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Bref\\Messenger\\Test\\": "tests/"
+            "Bref\\Symfony\\Messenger\\Test\\": "tests/"
         }
     },
     "require": {

@@ -19,7 +19,7 @@ Next, register the bundle in `config/bundles.php`:
 ```php
 return [
     // ...
-    Bref\Messenger\BrefMessengerBundle::class => ['all' => true],
+    Bref\Symfony\Messenger\BrefMessengerBundle::class => ['all' => true],
 ];
 ```
 
@@ -29,7 +29,7 @@ create `bin/consumer.php` with the following contents:
 ```php
 <?php declare(strict_types=1);
 
-use Bref\Messenger\Service\BrefWorker;
+use Bref\Symfony\Messenger\Service\BrefWorker;
 
 require dirname(__DIR__) . '/config/bootstrap.php';
 
@@ -98,9 +98,9 @@ services:
               version: '2012-11-05'
 
     my_sqs_consumer:
-        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         arguments:
-            - '@Bref\Messenger\Service\BusDriver'
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'my_sqs' # Same as transport name
@@ -139,9 +139,9 @@ services:
               version: '2012-11-05'
 
     my_fifo_consumer:
-        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         arguments:
-            - '@Bref\Messenger\Service\BusDriver'
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'my_sqs_fifo' # Same as transport name
@@ -177,9 +177,9 @@ services:
               version: '2010-03-31'
 
     my_sns_consumer:
-        class: Bref\Messenger\Service\Sns\SnsConsumer
+        class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
         arguments:
-            - '@Bref\Messenger\Service\BusDriver'
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'my_sns' # Same as transport name
@@ -254,7 +254,7 @@ Below is some config to add a deal letter queue.
 
 ## Customize the consumer
 
-Each consumer is just an service implementing `Bref\Messenger\Service\Consumer`. 
+Each consumer is just an service implementing `Bref\Symfony\Messenger\Service\Consumer`. 
 They may be configured how ever you want. A good bus to have as default is the
 [RoutableMessageBus](https://github.com/symfony/symfony/blob/4.4/src/Symfony/Component/Messenger/RoutableMessageBus.php)
 which will automatically find the correct bus depending on your transport name. 
@@ -283,9 +283,9 @@ services:
               version: '2012-11-05'
 
     my_sqs_consumer:
-        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         arguments:
-            - '@Bref\Messenger\Service\BusDriver'
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'
             - '@Happyr\MessageSerializer\Serializer'
             - 'workqueue' # Same as transport name
@@ -299,18 +299,18 @@ services:
 If you want to do your own implementation of a consumer you need two things: 
 
 1. Make sure the "type" can be read from the Lambda event
-2. An implementation of `Bref\Messenger\Service\Consumer`
+2. An implementation of `Bref\Symfony\Messenger\Service\Consumer`
 
 ### 1. Finding the type
 
-The `Bref\Messenger\Service\TypeProvider` is pretty good at finding the type since
+The `Bref\Symfony\Messenger\Service\TypeProvider` is pretty good at finding the type since
 all(?) AWS Lambda events has a `EventSource` property. But you may want to override 
 this with your own logic: 
 
 ```php
 namespace App\Service;
 
-final class MyTypeProvider implements \Bref\Messenger\Service\TypeResolver
+final class MyTypeProvider implements \Bref\Symfony\Messenger\Service\TypeResolver
 {
     public function getType(array $event): ?string
     {
@@ -330,15 +330,15 @@ services:
             - { name: 'bref_messenger.type_provider' }
 ```
 
-### 2. Implement `Bref\Messenger\Service\Consumer`
+### 2. Implement `Bref\Symfony\Messenger\Service\Consumer`
 
 This class may do every crazy thing you may want. Remember that if you want
-to share your Consumer implementation, it is a good idea to use `Bref\Messenger\Service\BusDriver`
+to share your Consumer implementation, it is a good idea to use `Bref\Symfony\Messenger\Service\BusDriver`
 
 ```php
 namespace App\Service;
 
-final class MyConsumer implements \Bref\Messenger\Service\Consumer
+final class MyConsumer implements \Bref\Symfony\Messenger\Service\Consumer
 {
     public function consume(string $type, $event): void
     {
@@ -393,7 +393,7 @@ services:
         autowire: true
     
     my_sqs_consumer:
-        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'workqueue'
@@ -401,7 +401,7 @@ services:
             - { name: bref_messenger.consumer }
 
     my_sns_consumer:
-        class: Bref\Messenger\Service\Sns\SnsConsumer
+        class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'notification'

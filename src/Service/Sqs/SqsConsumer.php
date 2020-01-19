@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service\Sqs;
+namespace Bref\Symfony\Messenger\Service\Sqs;
 
-use Bref\Messenger\Exception\InvalidEventException;
-use Bref\Messenger\Exception\TypeNotSupportedException;
-use Bref\Messenger\Service\BusDriver;
-use Bref\Messenger\Service\Consumer;
+use Bref\Symfony\Messenger\Exception\InvalidEventException;
+use Bref\Symfony\Messenger\Exception\TypeNotSupportedException;
+use Bref\Symfony\Messenger\Service\BusDriver;
+use Bref\Symfony\Messenger\Service\Consumer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 

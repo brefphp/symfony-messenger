@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Test\Unit\Service;
+namespace Bref\Symfony\Messenger\Test\Unit\Service;
 
-use Bref\Messenger\Exception\ConsumerNotFoundException;
-use Bref\Messenger\Service\Consumer;
-use Bref\Messenger\Service\ConsumerProvider;
+use Bref\Symfony\Messenger\Exception\ConsumerNotFoundException;
+use Bref\Symfony\Messenger\Service\Consumer;
+use Bref\Symfony\Messenger\Service\ConsumerProvider;
 use PHPUnit\Framework\TestCase;
 
 class ConsumerProviderTest extends TestCase

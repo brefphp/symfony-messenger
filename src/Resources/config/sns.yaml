@@ -1,5 +1,5 @@
 services:
-    Bref\Messenger\Service\Sns\SnsTransportFactory:
+    Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory:
         tags: ['messenger.transport_factory']
         arguments:
             - '@Aws\Sns\SnsClient'

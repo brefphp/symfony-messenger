@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service;
+namespace Bref\Symfony\Messenger\Service;
 
 /**
  * Read the event type from most/all AWS events.

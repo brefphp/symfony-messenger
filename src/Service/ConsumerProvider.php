@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service;
+namespace Bref\Symfony\Messenger\Service;
 
-use Bref\Messenger\Exception\ConsumerNotFoundException;
+use Bref\Symfony\Messenger\Exception\ConsumerNotFoundException;
 
 /**
  * This class will select the best consumer and forward the $event

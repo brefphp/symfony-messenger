@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Service\Sqs;
+namespace Bref\Symfony\Messenger\Service\Sqs;
 
 use Aws\Sqs\SqsClient;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;

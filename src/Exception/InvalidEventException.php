@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Exception;
+namespace Bref\Symfony\Messenger\Exception;
 
 class InvalidEventException extends \RuntimeException
 {

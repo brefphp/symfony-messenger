@@ -3,13 +3,13 @@ framework:
         transports:
             foo: 'sns://arn:aws:sns:us-east-1:1234567890:test'
         routing:
-            'Bref\Messenger\Test\Resources\TestMessage\TestMessage': foo
+            'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
 
 
 bref_messenger:
     consumers:
         foo:
-            service: 'Bref\Messenger\Service\Sns\SnsConsumer'
+            service: 'Bref\Symfony\Messenger\Service\Sns\SnsConsumer'
 
 services:
     Aws\Sns\SnsClient:

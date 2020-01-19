@@ -1,14 +1,14 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Test\Functional\Service\Sqs;
+namespace Bref\Symfony\Messenger\Test\Functional\Service\Sqs;
 
 use Aws\CommandInterface;
 use Aws\MockHandler;
 use Aws\Result;
-use Bref\Messenger\Service\Sqs\SqsTransport;
-use Bref\Messenger\Service\Sqs\SqsTransportFactory;
-use Bref\Messenger\Test\Functional\BaseFunctionalTest;
-use Bref\Messenger\Test\Resources\TestMessage\TestMessage;
+use Bref\Symfony\Messenger\Service\Sqs\SqsTransport;
+use Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory;
+use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
+use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
 use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;

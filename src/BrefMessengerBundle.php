@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger;
+namespace Bref\Symfony\Messenger;
 
-use Bref\Messenger\DependencyInjection\Compiler\ConsumerPass;
+use Bref\Symfony\Messenger\DependencyInjection\Compiler\ConsumerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

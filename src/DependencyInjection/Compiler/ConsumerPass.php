@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\DependencyInjection\Compiler;
+namespace Bref\Symfony\Messenger\DependencyInjection\Compiler;
 
-use Bref\Messenger\Service\BrefWorker;
-use Bref\Messenger\Service\ConsumerProvider;
+use Bref\Symfony\Messenger\Service\BrefWorker;
+use Bref\Symfony\Messenger\Service\ConsumerProvider;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

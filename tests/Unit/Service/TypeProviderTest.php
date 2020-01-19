@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Bref\Messenger\Test\Unit\Service;
+namespace Bref\Symfony\Messenger\Test\Unit\Service;
 
-use Bref\Messenger\Service\TypeProvider;
+use Bref\Symfony\Messenger\Service\TypeProvider;
 use PHPUnit\Framework\TestCase;
 
 class TypeProviderTest extends TestCase

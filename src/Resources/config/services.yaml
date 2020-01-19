@@ -1,9 +1,11 @@
 services:
     Bref\Messenger\Service\ConsumerProvider:
+        lazy: true
         arguments:
             - ~ # Consumer[]
 
     Bref\Messenger\Service\TypeProvider:
+        lazy: true
         arguments:
             - !tagged_iterator bref_messenger.type_provider
 
@@ -13,24 +15,7 @@ services:
             - '@Bref\Messenger\Service\TypeProvider'
             - '@Bref\Messenger\Service\ConsumerProvider'
 
-    Bref\Messenger\Service\AbstractConsumer:
-        abstract: true
+    Bref\Messenger\Service\BusDriver: '@Bref\Messenger\Service\SimpleBusDriver'
+    Bref\Messenger\Service\SimpleBusDriver:
         arguments:
             - '@logger'
-            - ~ # MessageBus
-            - ~ # Serializer
-            - ~ # TransportName
-            - ~ # EventDispatcher
-
-    Bref\Messenger\Service\Sqs\SqsConsumer:
-        parent: Bref\Messenger\Service\AbstractConsumer
-        abstract: true
-
-    Bref\Messenger\Service\Sns\SnsConsumer:
-        parent: Bref\Messenger\Service\AbstractConsumer
-        abstract: true
-
-    Bref\Messenger\Service\S3\S3Consumer:
-        parent: Bref\Messenger\Service\AbstractConsumer
-        abstract: true
-

@@ -63,6 +63,9 @@ framework:
              'App\Message\MyMessage': async
 ```
 
+To consume messages that has been on the queue, you need to register a consumer
+service. The important thing is to tag the service with `bref_messenger.consumer`.
+
 ### SQS
 
 The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to
@@ -189,9 +192,6 @@ services:
 The [S3](https://aws.amazon.com/s3/) integration is only a Consumer. That means that
 we will not be able to publish Symfony Messenger messages on S3 but we can get
 notified when a file is uploaded/changed. 
-
-Since the S3 consumer is not connected to any transport we will use `no_transport: true`
-to avoid getting a "Missing transport exception" thrown when building the container. 
 
 ```yaml
 # config/packages/messenger.yaml

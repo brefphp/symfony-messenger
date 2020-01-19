@@ -1,9 +1,11 @@
 services:
     Bref\Messenger\Service\ConsumerProvider:
+        lazy: true
         arguments:
             - ~ # Consumer[]
 
     Bref\Messenger\Service\TypeProvider:
+        lazy: true
         arguments:
             - !tagged_iterator bref_messenger.type_provider
 

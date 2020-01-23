@@ -7,7 +7,7 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
-class SqsTransportFactory implements TransportFactoryInterface
+final class SqsTransportFactory implements TransportFactoryInterface
 {
     /** @var SqsClient */
     private $sqs;

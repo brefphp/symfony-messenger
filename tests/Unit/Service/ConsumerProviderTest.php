@@ -2,7 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Test\Unit\Service;
 
-use Bref\Symfony\Messenger\Exception\ConsumerNotFoundException;
+use Bref\Symfony\Messenger\Exception\ConsumerNotFound;
 use Bref\Symfony\Messenger\Service\Consumer;
 use Bref\Symfony\Messenger\Service\ConsumerProvider;
 use PHPUnit\Framework\TestCase;
@@ -12,18 +12,18 @@ class ConsumerProviderTest extends TestCase
     public function testConsume()
     {
         $event = ['foobar' => '4711'];
-        $input = [];
-        $consumer = new class($input) implements Consumer {
+        $consumer = new class() implements Consumer {
+            /** @var array */
             private $event;
-
-            public function __construct(array &$event)
-            {
-                $this->event = &$event;
-            }
 
             public function consume(string $type, array $event): void
             {
                 $this->event = $event;
+            }
+
+            public function getEvent(): array
+            {
+                return $this->event;
             }
 
             public static function supportedTypes(): array
@@ -35,7 +35,7 @@ class ConsumerProviderTest extends TestCase
         $provider = new ConsumerProvider(['biz' => $consumer]);
         $provider->consume('biz', $event);
 
-        $this->assertEquals($event, $input);
+        $this->assertEquals($event, $consumer->getEvent());
     }
 
     public function testConsumeWithoutConsumer()
@@ -52,7 +52,7 @@ class ConsumerProviderTest extends TestCase
         };
         $provider = new ConsumerProvider(['foo' => $consumer]);
 
-        $this->expectException(ConsumerNotFoundException::class);
+        $this->expectException(ConsumerNotFound::class);
         $provider->consume('bar', []);
     }
 }

@@ -7,7 +7,7 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
-class SnsTransportFactory implements TransportFactoryInterface
+final class SnsTransportFactory implements TransportFactoryInterface
 {
     /** @var SnsClient */
     private $sns;

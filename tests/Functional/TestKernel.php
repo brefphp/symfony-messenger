@@ -9,6 +9,7 @@ use Symfony\Component\HttpKernel\Kernel;
 
 class TestKernel extends Kernel
 {
+    /** @var string */
     private $configFile;
 
     public function __construct(string $configFile)

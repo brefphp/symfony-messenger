@@ -2,7 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Service;
 
-use Bref\Symfony\Messenger\Exception\TypeNotResolvedException;
+use Bref\Symfony\Messenger\Exception\TypeNotResolved;
 
 /**
  * Class that consumes messages when SQS/SNS triggers our Lambda with messages.
@@ -10,7 +10,7 @@ use Bref\Symfony\Messenger\Exception\TypeNotResolvedException;
  * This class will put those messages back onto the Symfony Messenger message bus
  * so that these messages are handled by their handlers.
  */
-class BrefWorker
+final class BrefWorker
 {
     /** @var TypeResolver */
     private $typeResolver;
@@ -32,7 +32,7 @@ class BrefWorker
         // get type from $event
         $type = $this->typeResolver->getType($event);
         if ($type === null) {
-            throw TypeNotResolvedException::create($event);
+            throw TypeNotResolved::create($event);
         }
 
         $this->consumer->consume($type, $event);

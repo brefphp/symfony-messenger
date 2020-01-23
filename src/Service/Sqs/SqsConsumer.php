@@ -2,14 +2,14 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
-use Bref\Symfony\Messenger\Exception\InvalidEventException;
-use Bref\Symfony\Messenger\Exception\TypeNotSupportedException;
+use Bref\Symfony\Messenger\Exception\InvalidEvent;
+use Bref\Symfony\Messenger\Exception\TypeNotSupported;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Bref\Symfony\Messenger\Service\Consumer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
-class SqsConsumer implements Consumer
+final class SqsConsumer implements Consumer
 {
     /** @var MessageBusInterface */
     private $bus;
@@ -32,14 +32,17 @@ class SqsConsumer implements Consumer
         $this->transportName = $transportName;
     }
 
+    /**
+     * @param mixed $event
+     */
     public function consume(string $type, $event): void
     {
         if (! in_array($type, self::supportedTypes())) {
-            throw TypeNotSupportedException::create($type, self::class, $event);
+            throw TypeNotSupported::create($type, self::class, $event);
         }
 
         if (! is_array($event) || ! isset($event['Records'])) {
-            throw InvalidEventException::create($type, self::class, $event);
+            throw InvalidEvent::create($type, self::class, $event);
         }
 
         foreach ($event['Records'] as $record) {

@@ -7,6 +7,9 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final class Configuration implements ConfigurationInterface
 {
+    /**
+     * {@inheritDoc}
+     */
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder('bref_messenger');

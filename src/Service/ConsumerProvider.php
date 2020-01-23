@@ -2,16 +2,17 @@
 
 namespace Bref\Symfony\Messenger\Service;
 
-use Bref\Symfony\Messenger\Exception\ConsumerNotFoundException;
+use Bref\Symfony\Messenger\Exception\ConsumerNotFound;
 
 /**
  * This class will select the best consumer and forward the $event
  */
-class ConsumerProvider implements Consumer
+final class ConsumerProvider implements Consumer
 {
+    /** @var Consumer[] */
     private $consumers;
 
-    public function __construct(array $consumers)
+    public function __construct(iterable $consumers)
     {
         $this->consumers = $consumers;
     }
@@ -19,7 +20,7 @@ class ConsumerProvider implements Consumer
     public function consume(string $type, array $event): void
     {
         if (! isset($this->consumers[$type])) {
-            throw ConsumerNotFoundException::create($type, $event);
+            throw ConsumerNotFound::create($type, $event);
         }
 
         $this->consumers[$type]->consume($type, $event);

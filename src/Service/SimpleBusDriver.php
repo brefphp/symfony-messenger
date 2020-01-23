@@ -8,8 +8,9 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\ConsumedByWorkerStamp;
 use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 
-class SimpleBusDriver implements BusDriver
+final class SimpleBusDriver implements BusDriver
 {
+    /** @var LoggerInterface */
     private $logger;
 
     public function __construct(LoggerInterface $logger)

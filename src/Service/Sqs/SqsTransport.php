@@ -11,7 +11,7 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Throwable;
 
-class SqsTransport implements TransportInterface
+final class SqsTransport implements TransportInterface
 {
     /** @var SerializerInterface */
     private $serializer;

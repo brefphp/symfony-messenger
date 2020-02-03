@@ -3,7 +3,7 @@
 namespace Bref\Symfony\Messenger\Test\Unit\DependencyInjection;
 
 use Bref\Symfony\Messenger\DependencyInjection\BrefMessengerExtension;
-use Bref\Symfony\Messenger\Service\BrefWorker;
+use Bref\Symfony\Messenger\Service\SimpleBusDriver;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 
 class BrefMessengerExtensionTest extends AbstractExtensionTestCase
@@ -17,6 +17,6 @@ class BrefMessengerExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
-        $this->assertContainerBuilderHasService(BrefWorker::class);
+        $this->assertContainerBuilderHasService(SimpleBusDriver::class);
     }
 }

@@ -2,14 +2,14 @@
 
 namespace Bref\Symfony\Messenger\Service\Sns;
 
-use Bref\Symfony\Messenger\Exception\InvalidEvent;
-use Bref\Symfony\Messenger\Exception\TypeNotSupported;
+use Bref\Context\Context;
+use Bref\Event\Sns\SnsEvent;
+use Bref\Event\Sns\SnsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
-use Bref\Symfony\Messenger\Service\Consumer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
-final class SnsConsumer implements Consumer
+final class SnsConsumer extends SnsHandler
 {
     /** @var MessageBusInterface */
     private $bus;
@@ -32,31 +32,11 @@ final class SnsConsumer implements Consumer
         $this->transportName = $transportName;
     }
 
-    /**
-     * @param mixed $event
-     */
-    public function consume(string $type, $event): void
+    public function handleSns(SnsEvent $event, Context $context): void
     {
-        if (! in_array($type, self::supportedTypes())) {
-            throw TypeNotSupported::create($type, self::class, $event);
-        }
-
-        if (! is_array($event) || ! isset($event['Records'])) {
-            throw InvalidEvent::create($type, self::class, $event);
-        }
-
-        foreach ($event['Records'] as $record) {
-            if (! isset($record['Sns']) || ! isset($record['Sns']['Message'])) {
-                throw InvalidEvent::create($type, self::class, $event);
-            }
-
-            $envelope = $this->serializer->decode(['body' => $record['Sns']['Message']]);
+        foreach ($event->getRecords() as $record) {
+            $envelope = $this->serializer->decode(['body' => $record->getMessage()]);
             $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
         }
-    }
-
-    public static function supportedTypes(): array
-    {
-        return ['sns'];
     }
 }

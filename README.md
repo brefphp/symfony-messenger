@@ -23,28 +23,9 @@ return [
 ];
 ```
 
-We need to create a new Lambda handler that receives all events from AWS. Lets 
-create `bin/consumer.php` with the following contents:
+Now, it is time to choose you the events you are interested in. 
 
-```php
-<?php declare(strict_types=1);
-
-use Bref\Symfony\Messenger\Service\BrefWorker;
-
-require dirname(__DIR__) . '/config/bootstrap.php';
-
-lambda(function ($event) {
-    $kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
-    $kernel->boot();
-
-    $worker = $kernel->getContainer()->get(BrefWorker::class);
-    $worker->consumeLambdaEvent($event);
-});
-```
-
-Now there is time to choose you the events you are interested in. 
-
-## Configure
+## Configuration
 
 This bundle has Symfony Messenger Transports to publish messages and Consumers
 to receive Lambda events from AWS. All Transports are configurable with a DSN and 
@@ -63,8 +44,7 @@ framework:
              'App\Message\MyMessage': async
 ```
 
-To consume messages that has been on the queue, you need to register a consumer
-service. The important thing is to tag the service with `bref_messenger.consumer`.
+To consume messages that has been on the queue, you need to use a *consumer* service.
 
 ### SQS
 
@@ -104,8 +84,37 @@ services:
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'my_sqs' # Same as transport name
-        tags:
-            - { name: bref_messenger.consumer }
+```
+
+Now, let's create our Lambda handler (for example `bin/consumer.php`):
+
+```php
+<?php declare(strict_types=1);
+
+require dirname(__DIR__) . '/config/bootstrap.php';
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return here the consumer service
+return $kernel->getContainer()->get('my_sqs_consumer');
+```
+
+And finally let's configure that handler in `serverless.yml`:
+
+```yaml
+functions:
+    worker:
+        handler: bin/consumer.php
+        timeout: 20 # in seconds
+        reservedConcurrency: 5 # max. 5 messages processed in parallel
+        layers:
+            - ${bref:layer.php-74}
+        events:
+            - sqs:
+                arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue
+                # Only 1 item at a time to simplify error handling
+                batchSize: 1
 ```
 
 #### FIFO Queue
@@ -127,27 +136,9 @@ framework:
             my_sqs_fifo: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue.fifo'
                 options: { message_group_id: com_example }
-
-bref_messenger:
-    sqs: true # Register the SQS transport
-
-services:
-    Aws\Sqs\SqsClient:
-        factory: [Aws\Sqs\SqsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2012-11-05'
-
-    my_fifo_consumer:
-        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
-        arguments:
-            - '@Bref\Symfony\Messenger\Service\BusDriver'
-            - '@messenger.routable_message_bus'
-            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
-            - 'my_sqs_fifo' # Same as transport name
-        tags:
-            - { name: bref_messenger.consumer }
 ```
+
+Everything else is identical to the normal SQS queue.
 
 ### SNS
 
@@ -183,46 +174,41 @@ services:
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'my_sns' # Same as transport name
-        tags:
-            - { name: bref_messenger.consumer }
-
 ```
 
-## Serverless configuration
+Now, let's create our Lambda handler (for example `bin/consumer.php`):
 
-The Serverless configuration is the same for all types of Lambda event source. You should just 
-make sure to configure the parameters correctly. You may also add as many events
-as you want. Same type or different types. Mix all you want. 
+```php
+<?php declare(strict_types=1);
+
+require dirname(__DIR__) . '/config/bootstrap.php';
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return here the consumer service
+return $kernel->getContainer()->get('my_sns_consumer');
+```
+
+And finally let's configure that handler in `serverless.yml`:
 
 ```yaml
-# serverless.yml
 functions:
     worker:
         handler: bin/consumer.php
         timeout: 20 # in seconds
-        reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
             - ${bref:layer.php-74}
         events:
-            - sqs:
-                arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue
-                # Only 1 item at a time to simplify error handling
-                batchSize: 1
-
-            - sqs:
-                arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue.fifo
-                batchSize: 1
-
             - sns:
                 arn: arn:aws:sns:us-east-1:1234567890:my_sns_topic
-
-```            
+```
 
 ## Error handling
 
 > This section is really raw, feel free to contribute to improve it.
 
-When a message fails, by default it will go back to the SQS queue. It will be
+When a message fails with SQS, by default it will go back to the SQS queue. It will be
 retied until the end of time. 
 
 If you are using SNS and the handler fails, then your message is forgotten. 
@@ -254,8 +240,7 @@ Below is some config to add a deal letter queue.
 
 ## Customize the consumer
 
-Each consumer is just an service implementing `Bref\Symfony\Messenger\Service\Consumer`. 
-They may be configured how ever you want. A good bus to have as default is the
+Each consumer may be configured how ever you want. A good bus to have as default is the
 [RoutableMessageBus](https://github.com/symfony/symfony/blob/4.4/src/Symfony/Component/Messenger/RoutableMessageBus.php)
 which will automatically find the correct bus depending on your transport name. 
 
@@ -289,48 +274,12 @@ services:
             - '@messenger.routable_message_bus'
             - '@Happyr\MessageSerializer\Serializer'
             - 'workqueue' # Same as transport name
-        tags:
-            - { name: bref_messenger.consumer }
 
 ```
 
 ## Creating your own consumer
 
-If you want to do your own implementation of a consumer you need two things: 
-
-1. Make sure the "type" can be read from the Lambda event
-2. An implementation of `Bref\Symfony\Messenger\Service\Consumer`
-
-### 1. Finding the type
-
-The `Bref\Symfony\Messenger\Service\TypeProvider` is pretty good at finding the type since
-all(?) AWS Lambda events has a `EventSource` property. But you may want to override 
-this with your own logic: 
-
-```php
-namespace App\Service;
-
-final class MyTypeProvider implements \Bref\Symfony\Messenger\Service\TypeResolver
-{
-    public function getType(array $event): ?string
-    {
-        if (/*...*/) {
-            return 'my_type';
-        }
-
-        return null;
-    }
-}
-```
-
-```yaml
-services:
-    App\Service\MyTypeProvider:
-        tags: 
-            - { name: 'bref_messenger.type_provider' }
-```
-
-### 2. Implement `Bref\Symfony\Messenger\Service\Consumer`
+If you want to do your own implementation of a consumer, you can extend `SqsHandler` or `SnsHandler` yourself.
 
 This class may do every crazy thing you may want. Remember that if you want
 to share your Consumer implementation, it is a good idea to use `Bref\Symfony\Messenger\Service\BusDriver`
@@ -338,19 +287,14 @@ to share your Consumer implementation, it is a good idea to use `Bref\Symfony\Me
 ```php
 namespace App\Service;
 
-final class MyConsumer implements \Bref\Symfony\Messenger\Service\Consumer
+final class MyConsumer extends \Bref\Event\Sqs\SqsHandler
 {
-    public function consume(string $type, $event): void
+    public function handleSqs(SqsEvent $event, Context $context): void
     {
         // ...
         $envelope = $this->serializer->decode(['body' => /* ... */ ]);
 
         // ...
-    }
-
-    public static function supportedTypes(): array
-    {
-        return ['my_type'];
     }
 }
 ```
@@ -397,15 +341,10 @@ services:
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'workqueue'
-        tags:
-            - { name: bref_messenger.consumer }
 
     my_sns_consumer:
         class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'notification'
-        tags:
-            - { name: bref_messenger.consumer }
-
 ```

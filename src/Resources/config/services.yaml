@@ -1,20 +1,4 @@
 services:
-    Bref\Symfony\Messenger\Service\ConsumerProvider:
-        lazy: true
-        arguments:
-            - ~ # Consumer[]
-
-    Bref\Symfony\Messenger\Service\TypeProvider:
-        lazy: true
-        arguments:
-            - !tagged_iterator bref_messenger.type_provider
-
-    Bref\Symfony\Messenger\Service\BrefWorker:
-        public: true
-        arguments:
-            - '@Bref\Symfony\Messenger\Service\TypeProvider'
-            - '@Bref\Symfony\Messenger\Service\ConsumerProvider'
-
     Bref\Symfony\Messenger\Service\BusDriver: '@Bref\Symfony\Messenger\Service\SimpleBusDriver'
     Bref\Symfony\Messenger\Service\SimpleBusDriver:
         arguments:

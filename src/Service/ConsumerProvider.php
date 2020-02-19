@@ -7,7 +7,7 @@ use Bref\Symfony\Messenger\Exception\ConsumerNotFound;
 /**
  * This class will select the best consumer and forward the $event
  */
-final class ConsumerProvider implements Consumer
+class ConsumerProvider implements Consumer
 {
     /** @var Consumer[] */
     private $consumers;

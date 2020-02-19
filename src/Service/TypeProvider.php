@@ -5,7 +5,7 @@ namespace Bref\Symfony\Messenger\Service;
 /**
  * Read the event type from most/all AWS events.
  */
-final class TypeProvider implements TypeResolver
+class TypeProvider implements TypeResolver
 {
     /** @var TypeResolver[] */
     private $typeResolvers;

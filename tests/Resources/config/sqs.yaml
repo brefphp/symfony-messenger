@@ -30,5 +30,3 @@ services:
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'my_sqs' # Same as transport name
-        tags:
-            - { name: bref_messenger.consumer }

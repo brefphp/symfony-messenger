@@ -2,14 +2,14 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
-use Bref\Symfony\Messenger\Exception\InvalidEvent;
-use Bref\Symfony\Messenger\Exception\TypeNotSupported;
+use Bref\Context\Context;
+use Bref\Event\Sqs\SqsEvent;
+use Bref\Event\Sqs\SqsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
-use Bref\Symfony\Messenger\Service\Consumer;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
-final class SqsConsumer implements Consumer
+final class SqsConsumer extends SqsHandler
 {
     /** @var MessageBusInterface */
     private $bus;
@@ -32,28 +32,12 @@ final class SqsConsumer implements Consumer
         $this->transportName = $transportName;
     }
 
-    /**
-     * @param mixed $event
-     */
-    public function consume(string $type, $event): void
+    public function handleSqs(SqsEvent $event, Context $context): void
     {
-        if (! in_array($type, self::supportedTypes())) {
-            throw TypeNotSupported::create($type, self::class, $event);
-        }
-
-        if (! is_array($event) || ! isset($event['Records'])) {
-            throw InvalidEvent::create($type, self::class, $event);
-        }
-
-        foreach ($event['Records'] as $record) {
-            $envelope = $this->serializer->decode(['body' => $record['body']]);
+        foreach ($event->getRecords() as $record) {
+            $envelope = $this->serializer->decode(['body' => $record->getBody()]);
 
             $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
         }
-    }
-
-    public static function supportedTypes(): array
-    {
-        return ['sqs'];
     }
 }

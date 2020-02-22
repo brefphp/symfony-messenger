@@ -30,5 +30,3 @@ services:
             - '@messenger.routable_message_bus'
             - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
             - 'foo'
-        tags:
-            - { name: bref_messenger.consumer }

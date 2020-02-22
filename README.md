@@ -213,7 +213,7 @@ retied until the end of time.
 
 If you are using SNS and the handler fails, then your message is forgotten. 
 
-Below is some config to add a deal letter queue. 
+Below is some config to add a dead letter queue. 
 
 ```yaml
 # serverless.yml

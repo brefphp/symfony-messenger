@@ -18,6 +18,7 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 ->arrayNode('sns')->canBeEnabled()->end()
                 ->arrayNode('sqs')->canBeEnabled()->end()
+                ->arrayNode('eventbridge')->canBeEnabled()->end()
             ->end()
         ->end();
 

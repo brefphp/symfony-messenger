@@ -1,5 +1,7 @@
 Bridge to use Symfony Messenger on AWS Lambda with [Bref](https://bref.sh).
 
+This bridge will allow messages to be dispatched to SQS, SNS and EventBridge, while workers handle those messages on AWS Lambda.
+
 ## Installation
 
 This guide assumes that:
@@ -79,6 +81,7 @@ services:
 
     my_sqs_consumer:
         class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
+        public: true
         arguments:
             - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'
@@ -169,6 +172,7 @@ services:
 
     my_sns_consumer:
         class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
+        public: true
         arguments:
             - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'
@@ -202,6 +206,74 @@ functions:
         events:
             - sns:
                 arn: arn:aws:sns:us-east-1:1234567890:my_sns_topic
+```
+
+### EventBridge
+
+AWS [EventBridge](https://aws.amazon.com/eventbridge/) is a message routing service. It is similar to SNS, but more powerful.
+
+> Note that environment variables `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+do always exist on Lambda. The AWS client will read `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+automatically. 
+
+```yaml
+# config/packages/messenger.yaml
+framework:
+    messenger:
+        transports:
+            # "myapp" is the EventBridge source, i.e. a namespace for your application's messages
+            # This source name will be reused in `serverless.yml` later.
+            my_eventbridge: 'eventbridge://myapp'
+
+bref_messenger:
+    eventbridge: true # Register the EventBridge transport
+
+services:
+    Aws\EventBridge\EventBridgeClient:
+        arguments:
+            - region: '%env(AWS_REGION)%'
+              version: 'latest'
+
+    my_eventbridge_consumer:
+        class: Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer
+        public: true
+        arguments:
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'my_eventbridge' # Same as transport name
+```
+
+Now, let's create our Lambda handler (for example `bin/consumer.php`):
+
+```php
+<?php declare(strict_types=1);
+
+require dirname(__DIR__) . '/config/bootstrap.php';
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return here the consumer service
+return $kernel->getContainer()->get('my_eventbridge_consumer');
+```
+
+And finally let's configure that handler in `serverless.yml`:
+
+```yaml
+functions:
+    worker:
+        handler: bin/consumer.php
+        timeout: 20 # in seconds
+        layers:
+            - ${bref:layer.php-74}
+        events:
+            -   eventBridge:
+                    # This filters events we listen to: only events from the "myapp" source.
+                    # This should be the same source defined in config/packages/messenger.yaml
+                    pattern:
+                        source:
+                            - myapp
 ```
 
 ## Error handling

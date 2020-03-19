@@ -38,7 +38,7 @@ final class Configuration implements ConfigurationInterface
         return $treeBuilder;
     }
 
-    private static function validateType(?array $clients): array
+    protected static function validateType(?array $clients): array
     {
         if ($clients === null) {
             return [];

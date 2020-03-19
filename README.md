@@ -69,10 +69,6 @@ framework:
             my_sqs: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
-bref_messenger:
-    transports:
-        sqs: ~ # Register the SQS transport
-
 services:
     Aws\Sqs\SqsClient:
         factory: [Aws\Sqs\SqsClient, factory]
@@ -161,10 +157,6 @@ framework:
             my_sns: 
                 dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
-bref_messenger:
-    transports:
-        sns: ~ # Register the SNS transport
-
 services:
     Aws\Sns\SnsClient:
         factory: [Aws\Sns\SnsClient, factory]
@@ -226,10 +218,6 @@ framework:
             # "myapp" is the EventBridge source, i.e. a namespace for your application's messages
             # This source name will be reused in `serverless.yml` later.
             my_eventbridge: 'eventbridge://myapp'
-
-bref_messenger:
-    transports:
-        eventbridge: ~ # Register the EventBridge transport
 
 services:
     Aws\EventBridge\EventBridgeClient:
@@ -332,10 +320,6 @@ framework:
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
                 serializer: 'Happyr\MessageSerializer\Serializer'
 
-bref_messenger:
-    transports:
-        sqs: ~ # Register the SQS transport
-
 services:
     Aws\Sqs\SqsClient:
         factory: [Aws\Sqs\SqsClient, factory]
@@ -408,11 +392,6 @@ framework:
             'App\Message\Ping': workqueue
             'App\Message\Pong': notification
 
-bref_messenger:
-    transports:
-        sqs: ~
-        sns: ~
-
 services:
     _defaults:
         autowire: true
@@ -428,4 +407,29 @@ services:
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'notification'
+```
+
+## Configuration reference
+
+Most users will use this bundle without changing the default configuration. The 
+bundle will automatically try to register all transport factories depending on what 
+services you have installed. 
+
+You can customize this behavior or disable it completely. See configuration example:  
+
+```yaml
+bref_messenger:
+    register_service: true # set to false if we should not register transport factories automatically
+    transports:
+        eventbridge: ~ # Register the EventBridge transport factory with default properties
+        sns:
+          register_service: false # Disable auto registration of SNS factory  
+        foobar: # Create a custom transport factory
+          type: sqs
+          client: 'my_aws_sqs_client'
+
+service:
+  my_aws_sqs_client:
+    class: Aws\Sqs\SqsClient
+    arguments: # ... 
 ```

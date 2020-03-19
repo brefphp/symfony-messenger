@@ -10,10 +10,16 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class BrefTransportFactoryPass implements CompilerPassInterface
 {
+    /** @var array|null */
+    private $dsn;
+
     public function process(ContainerBuilder $container): void
     {
         // find all service IDs with the app.mail_transport tag
         $taggedServices = $container->findTaggedServiceIds('bref_messenger.transport_factory');
+
+        $removedTypes = [];
+        $configuredTypes = [];
 
         foreach ($taggedServices as $id => $tags) {
             $definition = $container->getDefinition($id);
@@ -25,12 +31,13 @@ class BrefTransportFactoryPass implements CompilerPassInterface
 
             $explicitConfigured = false;
             foreach ($tags as $tag) {
-                $type = $tag['type'];
+                $type = $tag['type'] ?? 'unknown';
                 $explicitConfigured = $explicitConfigured || ($tag['explicit_configured'] ?? false);
             }
 
             $clientService = $argument->__toString();
             if ($container->has($clientService)) {
+                $configuredTypes[$type] = true;
                 continue;
             }
 
@@ -41,6 +48,48 @@ class BrefTransportFactoryPass implements CompilerPassInterface
 
             // Remove
             $container->removeDefinition($id);
+            $removedTypes[$type] = $definition->getClass();
         }
+
+        foreach ($removedTypes as $type => $factoryClass) {
+            if ((! isset($configuredTypes[$type]) || ! $configuredTypes[$type]) && $this->ifUsed($container, $factoryClass)) {
+                // Make sure user get an error on build time instead of runtime
+                throw new InvalidConfigurationException(sprintf('It seams like you have configured a messenger transport to use "%s" but no transport factory is registered. Try adding "%s: ~" or disable this message with "%s.register_service: false".', $type, $id, $id));
+            }
+        }
+    }
+
+    /**
+     * Look at all Symfony framework.messenger.transport to see if this factory was used.
+     */
+    private function ifUsed(ContainerBuilder $container, string $factoryClass): bool
+    {
+        $reflectionClass = new \ReflectionClass($factoryClass);
+        $object = $reflectionClass->newInstanceWithoutConstructor();
+        $method = $reflectionClass->getMethod('supports');
+
+        foreach ($this->getAllConfiguredDsn($container) as $dns) {
+            if ($method->invoke($object, $dns, [])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function getAllConfiguredDsn(ContainerBuilder $container): array
+    {
+        if (is_array($this->dsn)) {
+            return $this->dsn;
+        }
+
+        $taggedServices = $container->findTaggedServiceIds('messenger.receiver');
+
+        $this->dsn = [];
+        foreach ($taggedServices as $id => $tags) {
+            $this->dsn[] = $container->getDefinition($id)->getArgument(0);
+        }
+
+        return $this->dsn;
     }
 }

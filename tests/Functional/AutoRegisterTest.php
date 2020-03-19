@@ -52,7 +52,7 @@ class AutoRegisterTest extends BaseBundleTestCase
     public function test factory minimal config(): void
     {
         $kernel = $this->createKernel();
-        $kernel->addConfigFile(dirname(__DIR__) . '/Resources/config/sqs-minimal.yaml');
+        $kernel->addConfigFile(dirname(__DIR__) . '/Resources/config/invalid-sqs-minimal.yaml');
 
         $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessageMatches('@"bref_messenger.transport.sqs".+SqsClient@');

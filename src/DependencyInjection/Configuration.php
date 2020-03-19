@@ -44,15 +44,15 @@ final class Configuration implements ConfigurationInterface
             return [];
         }
 
-        $awsServices = TransportProvider::getServiceNames();
+        $transports = TransportProvider::getServiceNames();
         foreach ($clients as $name => $config) {
-            if (\in_array($name, $awsServices)) {
+            if (\in_array($name, $transports)) {
                 if (isset($config['type']) && $name !== $config['type']) {
                     throw new InvalidConfigurationException(sprintf('You cannot define a service named "%s" with type "%s". That is super confusing.', $name, $config['type']));
                 }
                 $clients[$name]['type'] = $name;
             } elseif (! isset($config['type'])) {
-                if (! \in_array($name, $awsServices)) {
+                if (! \in_array($name, $transports)) {
                     throw new InvalidConfigurationException(sprintf('The "bref_messenger.transport.%s" does not have a type and we were unable to guess it. Please add "bref_messenger.transport.%s.type".', $name, $name));
                 }
 

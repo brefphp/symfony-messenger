@@ -23,5 +23,8 @@ class BrefMessengerExtension extends Extension
         if ($config['sqs']['enabled']) {
             $loader->load('sqs.yaml');
         }
+        if ($config['eventbridge']['enabled']) {
+            $loader->load('eventbridge.yaml');
+        }
     }
 }

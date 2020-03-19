@@ -1,0 +1,31 @@
+framework:
+    messenger:
+        transports:
+            foo: 'eventbridge://myapp.mycomponent'
+        routing:
+            'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
+
+
+bref_messenger:
+    eventbridge: true
+
+services:
+    Aws\EventBridge\EventBridgeClient:
+        arguments:
+            - credentials: false
+              region: us-east-1
+              version: 'latest'
+              # Mock Guzzle for the tests
+              handler: '@mock_handler'
+
+    mock_handler:
+        class: Aws\MockHandler
+        public: true
+
+    my_eventbridge_consumer:
+        class: Bref\Messenger\Service\EventBridge\EventBridgeConsumer
+        arguments:
+            - '@Bref\Symfony\Messenger\Service\BusDriver'
+            - '@messenger.routable_message_bus'
+            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
+            - 'foo'

@@ -2,7 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Service\Sns;
 
-use Aws\Sns\SnsClient;
+use AsyncAws\Sns\SnsClient;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;

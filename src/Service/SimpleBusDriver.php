@@ -10,10 +10,10 @@ use Symfony\Component\Messenger\Stamp\ReceivedStamp;
 
 final class SimpleBusDriver implements BusDriver
 {
-    /** @var LoggerInterface */
+    /** @var LoggerInterface|null */
     private $logger;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(?LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
@@ -23,11 +23,13 @@ final class SimpleBusDriver implements BusDriver
         $envelope = $envelope->with(new ReceivedStamp($transportName), new ConsumedByWorkerStamp);
         $bus->dispatch($envelope);
 
-        $message = $envelope->getMessage();
-        $this->logger->info('{class} was handled successfully.', [
-            'class' => get_class($message),
-            'message' => $message,
-            'transport' => $transportName,
-        ]);
+        if ($this->logger instanceof LoggerInterface) {
+            $message = $envelope->getMessage();
+            $this->logger->info('{class} was handled successfully.', [
+                'class' => get_class($message),
+                'message' => $message,
+                'transport' => $transportName,
+            ]);
+        }
     }
 }

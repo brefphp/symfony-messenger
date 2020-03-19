@@ -69,9 +69,6 @@ framework:
             my_sqs: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
-bref_messenger:
-    sqs: true # Register the SQS transport
-
 services:
     Aws\Sqs\SqsClient:
         factory: [Aws\Sqs\SqsClient, factory]
@@ -160,9 +157,6 @@ framework:
             my_sns: 
                 dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
-bref_messenger:
-    sns: true # Register the SNS transport
-
 services:
     Aws\Sns\SnsClient:
         factory: [Aws\Sns\SnsClient, factory]
@@ -224,9 +218,6 @@ framework:
             # "myapp" is the EventBridge source, i.e. a namespace for your application's messages
             # This source name will be reused in `serverless.yml` later.
             my_eventbridge: 'eventbridge://myapp'
-
-bref_messenger:
-    eventbridge: true # Register the EventBridge transport
 
 services:
     Aws\EventBridge\EventBridgeClient:
@@ -329,9 +320,6 @@ framework:
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
                 serializer: 'Happyr\MessageSerializer\Serializer'
 
-bref_messenger:
-    sqs: true # Register the SQS transport
-
 services:
     Aws\Sqs\SqsClient:
         factory: [Aws\Sqs\SqsClient, factory]
@@ -359,7 +347,11 @@ to share your Consumer implementation, it is a good idea to use `Bref\Symfony\Me
 ```php
 namespace App\Service;
 
-final class MyConsumer extends \Bref\Event\Sqs\SqsHandler
+use Bref\Context\Context;
+use Bref\Event\Sqs\SqsEvent;
+use Bref\Event\Sqs\SqsHandler;
+
+final class MyConsumer extends SqsHandler
 {
     public function handleSqs(SqsEvent $event, Context $context): void
     {
@@ -400,10 +392,6 @@ framework:
             'App\Message\Ping': workqueue
             'App\Message\Pong': notification
 
-bref_messenger:
-    sns: true
-    sqs: true
-
 services:
     _defaults:
         autowire: true
@@ -419,4 +407,29 @@ services:
         arguments:
             $bus: '@messenger.routable_message_bus'
             $transportName: 'notification'
+```
+
+## Configuration reference
+
+Most users will use this bundle without changing the default configuration. The 
+bundle will automatically try to register all transport factories depending on what 
+services you have installed. 
+
+You can customize this behavior or disable it completely. See configuration example:  
+
+```yaml
+bref_messenger:
+    register_service: true # set to false if we should not register transport factories automatically
+    transports:
+        eventbridge: ~ # Register the EventBridge transport factory with default properties
+        sns:
+          register_service: false # Disable auto registration of SNS factory  
+        foobar: # Create a custom transport factory
+          type: sqs
+          client: 'my_aws_sqs_client'
+
+service:
+  my_aws_sqs_client:
+    class: Aws\Sqs\SqsClient
+    arguments: # ... 
 ```

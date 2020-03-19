@@ -17,7 +17,6 @@
     "require": {
         "php": "^7.3",
         "ext-json": "*",
-        "aws/aws-sdk-php": "^3.127",
         "symfony/messenger": "^4.3 || ^5.0",
         "symfony/config": "^4.3 || ^5.0",
         "symfony/dependency-injection": "^4.3 || ^5.0",
@@ -26,11 +25,14 @@
         "bref/bref": "^0.5.14"
     },
     "require-dev": {
+        "aws/aws-sdk-php": "^3.127",
         "phpunit/phpunit": "^8.5",
         "mnapoli/hard-mode": "^0.2.0",
         "phpstan/phpstan": "^0.12.0",
         "symfony/framework-bundle": "^4.3 || ^5.0",
         "nyholm/symfony-bundle-test": "^1.6",
-        "matthiasnoback/symfony-dependency-injection-test": "^4.1"
+        "matthiasnoback/symfony-dependency-injection-test": "^4.1",
+        "async-aws/sns": "^0.4.0",
+        "async-aws/sqs": "^0.4.0"
     }
 }

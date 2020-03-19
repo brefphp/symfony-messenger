@@ -2,7 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
-use Aws\Sqs\SqsClient;
+use AsyncAws\Sqs\SqsClient;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;

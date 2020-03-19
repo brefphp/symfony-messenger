@@ -2,4 +2,4 @@ services:
     Bref\Symfony\Messenger\Service\BusDriver: '@Bref\Symfony\Messenger\Service\SimpleBusDriver'
     Bref\Symfony\Messenger\Service\SimpleBusDriver:
         arguments:
-            - '@logger'
+            - '@?logger'

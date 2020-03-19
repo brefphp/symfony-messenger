@@ -70,7 +70,8 @@ framework:
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
 bref_messenger:
-    sqs: true # Register the SQS transport
+    transports:
+        sqs: ~ # Register the SQS transport
 
 services:
     Aws\Sqs\SqsClient:
@@ -161,7 +162,8 @@ framework:
                 dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
 bref_messenger:
-    sns: true # Register the SNS transport
+    transports:
+        sns: ~ # Register the SNS transport
 
 services:
     Aws\Sns\SnsClient:
@@ -226,7 +228,8 @@ framework:
             my_eventbridge: 'eventbridge://myapp'
 
 bref_messenger:
-    eventbridge: true # Register the EventBridge transport
+    transports:
+        eventbridge: ~ # Register the EventBridge transport
 
 services:
     Aws\EventBridge\EventBridgeClient:
@@ -330,7 +333,8 @@ framework:
                 serializer: 'Happyr\MessageSerializer\Serializer'
 
 bref_messenger:
-    sqs: true # Register the SQS transport
+    transports:
+        sqs: ~ # Register the SQS transport
 
 services:
     Aws\Sqs\SqsClient:
@@ -359,7 +363,11 @@ to share your Consumer implementation, it is a good idea to use `Bref\Symfony\Me
 ```php
 namespace App\Service;
 
-final class MyConsumer extends \Bref\Event\Sqs\SqsHandler
+use Bref\Context\Context;
+use Bref\Event\Sqs\SqsEvent;
+use Bref\Event\Sqs\SqsHandler;
+
+final class MyConsumer extends SqsHandler
 {
     public function handleSqs(SqsEvent $event, Context $context): void
     {
@@ -401,8 +409,9 @@ framework:
             'App\Message\Pong': notification
 
 bref_messenger:
-    sns: true
-    sqs: true
+    transports:
+        sqs: ~
+        sns: ~
 
 services:
     _defaults:

@@ -1,5 +1,0 @@
-services:
-    Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory:
-        tags: ['messenger.transport_factory']
-        arguments:
-            - '@Aws\EventBridge\EventBridgeClient'

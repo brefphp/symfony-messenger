@@ -23,7 +23,7 @@ class EventBridgeTransportTest extends BaseFunctionalTest
     public function test factory(): void
     {
         /** @var EventBridgeTransportFactory $factory */
-        $factory = $this->container->get(EventBridgeTransportFactory::class);
+        $factory = $this->container->get('bref_messenger.transport.event_bridge');
         $this->assertInstanceOf(EventBridgeTransportFactory::class, $factory);
 
         $this->assertTrue($factory->supports('eventbridge://', []));

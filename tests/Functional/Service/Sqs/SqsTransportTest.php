@@ -23,7 +23,7 @@ class SqsTransportTest extends BaseFunctionalTest
     public function test factory(): void
     {
         /** @var SqsTransportFactory $factory */
-        $factory = $this->container->get(SqsTransportFactory::class);
+        $factory = $this->container->get('bref_messenger.transport.sqs');
         $this->assertInstanceOf(SqsTransportFactory::class, $factory);
 
         $this->assertTrue($factory->supports('https://sqs.us-east-1.amazonaws.com/1234567890/test', []));

@@ -23,7 +23,7 @@ class SnsTransportTest extends BaseFunctionalTest
     public function test factory(): void
     {
         /** @var SnsTransportFactory $factory */
-        $factory = $this->container->get(SnsTransportFactory::class);
+        $factory = $this->container->get('bref_messenger.transport.sns');
         $this->assertInstanceOf(SnsTransportFactory::class, $factory);
 
         $this->assertTrue($factory->supports('sns://arn:aws:sns:us-east-1:1234567890:test', []));

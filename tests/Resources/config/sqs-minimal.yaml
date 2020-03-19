@@ -11,14 +11,3 @@ bref_messenger:
         sqs: ~
 
 services:
-    Aws\Sqs\SqsClient:
-        $config:
-            version: latest
-            region: us-east-1
-            credentials: false
-            # Mock Guzzle for the tests
-            handler: '@mock_handler'
-
-    mock_handler:
-        class: Aws\MockHandler
-

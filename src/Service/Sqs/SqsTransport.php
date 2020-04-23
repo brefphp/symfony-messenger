@@ -2,14 +2,15 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
+use Aws\Sqs\Exception\SqsException;
 use Aws\Sqs\SqsClient;
-use Exception;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Exception\LogicException;
+use Symfony\Component\Messenger\Exception\MessageDecodingFailedException;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
-use Throwable;
 
 final class SqsTransport implements TransportInterface
 {
@@ -57,7 +58,7 @@ final class SqsTransport implements TransportInterface
 
         try {
             $result = $this->sqs->sendMessage($arguments);
-        } catch (Throwable $e) {
+        } catch (SqsException $e) {
             throw new TransportException($e->getMessage(), 0, $e);
         }
 
@@ -70,16 +71,69 @@ final class SqsTransport implements TransportInterface
 
     public function get(): iterable
     {
-        throw new Exception('Not implemented');
+        try {
+            $response = $this->sqs->receiveMessage([
+                'QueueUrl' => $this->queueUrl,
+                'AttributeNames' => ['ApproximateReceiveCount'],
+            ]);
+        } catch (SqsException $e) {
+            throw new TransportException($e->getMessage(), 0, $e);
+        }
+
+        foreach ($response['Messages'] ?? [] as $message) {
+            try {
+                $envelope = $this->serializer->decode([
+                    'body' => $message['Body'],
+                    'headers' => $message['MessageAttributes']['Headers'] ?? [],
+                ]);
+
+                yield $envelope->with(new SqsReceivedStamp($message['ReceiptHandle']));
+            } catch (MessageDecodingFailedException $e) {
+                $this->sqs->deleteMessage([
+                    'QueueUrl' => $this->queueUrl,
+                    'ReceiptHandle' => $message['ReceiptHandle'],
+                ]);
+
+                throw $e;
+            }
+        }
     }
 
     public function ack(Envelope $envelope): void
     {
-        throw new Exception('Not implemented');
+        try {
+            $receiptHandle = $this->findSqsReceivedStamp($envelope)->getReceiptHandle();
+            $this->sqs->deleteMessage([
+                'QueueUrl' => $this->queueUrl,
+                'ReceiptHandle' => $receiptHandle,
+            ]);
+        } catch (SqsException $e) {
+            throw new TransportException($e->getMessage(), 0, $e);
+        }
     }
 
     public function reject(Envelope $envelope): void
     {
-        throw new Exception('Not implemented');
+        try {
+            $receiptHandle = $this->findSqsReceivedStamp($envelope)->getReceiptHandle();
+            $this->sqs->deleteMessage([
+                'QueueUrl' => $this->queueUrl,
+                'ReceiptHandle' => $receiptHandle,
+            ]);
+        } catch (SqsException $e) {
+            throw new TransportException($e->getMessage(), 0, $e);
+        }
+    }
+
+    private function findSqsReceivedStamp(Envelope $envelope): SqsReceivedStamp
+    {
+        /** @var SqsReceivedStamp|null $sqsReceivedStamp */
+        $sqsReceivedStamp = $envelope->last(SqsReceivedStamp::class);
+
+        if (null === $sqsReceivedStamp) {
+            throw new LogicException('No SqsReceivedStamp found on the Envelope.');
+        }
+
+        return $sqsReceivedStamp;
     }
 }

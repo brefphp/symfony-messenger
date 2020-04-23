@@ -130,7 +130,7 @@ final class SqsTransport implements TransportInterface
         /** @var SqsReceivedStamp|null $sqsReceivedStamp */
         $sqsReceivedStamp = $envelope->last(SqsReceivedStamp::class);
 
-        if (null === $sqsReceivedStamp) {
+        if ($sqsReceivedStamp === null) {
             throw new LogicException('No SqsReceivedStamp found on the Envelope.');
         }
 

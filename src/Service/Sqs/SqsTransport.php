@@ -4,6 +4,7 @@ namespace Bref\Symfony\Messenger\Service\Sqs;
 
 use Aws\Sqs\Exception\SqsException;
 use Aws\Sqs\SqsClient;
+use JsonException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\LogicException;
 use Symfony\Component\Messenger\Exception\MessageDecodingFailedException;
@@ -75,6 +76,7 @@ final class SqsTransport implements TransportInterface
             $response = $this->sqs->receiveMessage([
                 'QueueUrl' => $this->queueUrl,
                 'AttributeNames' => ['ApproximateReceiveCount'],
+                'MessageAttributeNames' => ['All'],
             ]);
         } catch (SqsException $e) {
             throw new TransportException($e->getMessage(), 0, $e);
@@ -84,11 +86,11 @@ final class SqsTransport implements TransportInterface
             try {
                 $envelope = $this->serializer->decode([
                     'body' => $message['Body'],
-                    'headers' => $message['MessageAttributes']['Headers'] ?? [],
+                    'headers' => json_decode($message['MessageAttributes']['Headers']['StringValue'] ?? null, true, 512, JSON_THROW_ON_ERROR),
                 ]);
 
                 yield $envelope->with(new SqsReceivedStamp($message['ReceiptHandle']));
-            } catch (MessageDecodingFailedException $e) {
+            } catch (MessageDecodingFailedException | JsonException $e) {
                 $this->sqs->deleteMessage([
                     'QueueUrl' => $this->queueUrl,
                     'ReceiptHandle' => $message['ReceiptHandle'],

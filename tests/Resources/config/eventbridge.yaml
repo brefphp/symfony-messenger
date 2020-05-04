@@ -5,18 +5,16 @@ framework:
         routing:
             'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
 
-
-bref_messenger:
-    eventbridge: true
-
 services:
-    Aws\EventBridge\EventBridgeClient:
+    bref.messenger.eventbridge_client:
+        class: Aws\EventBridge\EventBridgeClient
+        public: true
         arguments:
-            - credentials: false
-              region: us-east-1
-              version: 'latest'
-              # Mock Guzzle for the tests
-              handler: '@mock_handler'
+            -   credentials: false
+                region: us-east-1
+                version: 'latest'
+                # Mock Guzzle for the tests
+                handler: '@mock_handler'
 
     mock_handler:
         class: Aws\MockHandler

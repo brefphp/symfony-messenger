@@ -13,18 +13,5 @@ class BrefMessengerExtension extends Extension
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
-
-        $configuration = $this->getConfiguration($configs, $container);
-        $config = $this->processConfiguration($configuration, $configs);
-
-        if ($config['sns']['enabled']) {
-            $loader->load('sns.yaml');
-        }
-        if ($config['sqs']['enabled']) {
-            $loader->load('sqs.yaml');
-        }
-        if ($config['eventbridge']['enabled']) {
-            $loader->load('eventbridge.yaml');
-        }
     }
 }

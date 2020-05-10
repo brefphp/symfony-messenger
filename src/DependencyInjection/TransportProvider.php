@@ -2,9 +2,9 @@
 
 namespace Bref\Symfony\Messenger\DependencyInjection;
 
+use AsyncAws\EventBridge\EventBridgeClient;
 use AsyncAws\Sns\SnsClient;
 use AsyncAws\Sqs\SqsClient;
-use AsyncAws\EventBridge\EventBridgeClient;
 use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory;
 use Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory;

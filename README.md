@@ -25,14 +25,17 @@ return [
 ];
 ```
 
-Now, it is time to choose you the events you are interested in. 
-
 ## Configuration
 
-This bundle has Symfony Messenger Transports to publish messages and Consumers
-to receive Lambda events from AWS. All Transports are configurable with a DSN and 
-the sections below will show you some examples. They will all follow the normal 
-Symfony pattern: 
+The bundle will automatically register ymfony Messenger Transports factories for
+clients you have installed. We currently support
+
+- SQS by https://packagist.org/packages/async-aws/sqs
+- SNS by https://packagist.org/packages/async-aws/sns
+- EventBridge by https://packagist.org/packages/aws/aws-sdk-php
+
+All Transports are configurable with a DSN and the sections below will show you some
+examples. They will all follow the normal Symfony pattern:
 
 ```yaml
 # config/packages/messenger.yaml
@@ -47,6 +50,7 @@ framework:
 ```
 
 To consume messages that has been on the queue, you need to use a *consumer* service.
+The job of the consumer is to decode the message and put it back on the bus.
 
 ### SQS
 
@@ -70,11 +74,7 @@ framework:
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
 services:
-    Aws\Sqs\SqsClient:
-        factory: [Aws\Sqs\SqsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2012-11-05'
+    AsyncAws\Sqs\SqsClient: ~
 
     my_sqs_consumer:
         class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
@@ -158,11 +158,7 @@ framework:
                 dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
 services:
-    Aws\Sns\SnsClient:
-        factory: [Aws\Sns\SnsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2010-03-31'
+    AsyncAws\Sns\SnsClient: ~
 
     my_sns_consumer:
         class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
@@ -321,11 +317,7 @@ framework:
                 serializer: 'Happyr\MessageSerializer\Serializer'
 
 services:
-    Aws\Sqs\SqsClient:
-        factory: [Aws\Sqs\SqsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2012-11-05'
+    AsyncAws\Sqs\SqsClient: ~
 
     my_sqs_consumer:
         class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
@@ -430,6 +422,6 @@ bref_messenger:
 
 service:
   my_aws_sqs_client:
-    class: Aws\Sqs\SqsClient
+    class: AsyncAws\Sqs\SqsClient
     arguments: # ... 
 ```

@@ -2,7 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Service\EventBridge;
 
-use Aws\EventBridge\EventBridgeClient;
+use AsyncAws\EventBridge\EventBridgeClient;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -10,18 +10,18 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 final class EventBridgeTransportFactory implements TransportFactoryInterface
 {
     /** @var EventBridgeClient */
-    private $sns;
+    private $eventBridge;
 
     public function __construct(EventBridgeClient $sns)
     {
-        $this->sns = $sns;
+        $this->eventBridge = $sns;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
         $source = substr($dsn, strlen('eventbridge://'));
 
-        return new EventBridgeTransport($this->sns, $serializer, $source);
+        return new EventBridgeTransport($this->eventBridge, $serializer, $source);
     }
 
     public function supports(string $dsn, array $options): bool

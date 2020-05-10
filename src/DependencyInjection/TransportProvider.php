@@ -4,7 +4,7 @@ namespace Bref\Symfony\Messenger\DependencyInjection;
 
 use AsyncAws\Sns\SnsClient;
 use AsyncAws\Sqs\SqsClient;
-use Aws\EventBridge\EventBridgeClient;
+use AsyncAws\EventBridge\EventBridgeClient;
 use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory;
 use Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory;
@@ -26,7 +26,7 @@ class TransportProvider
             ],
             'event_bridge' => [
                 'default_client' => EventBridgeClient::class,
-                'package' => 'aws/aws-sdk-php',
+                'package' => 'async-aws/event-bridge',
                 'transport_factory' => EventBridgeTransportFactory::class,
             ],
         ];

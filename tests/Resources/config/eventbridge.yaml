@@ -6,13 +6,5 @@ framework:
             'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
 
 services:
-    Aws\EventBridge\EventBridgeClient:
-        arguments:
-            - credentials: false
-              region: us-east-1
-              version: 'latest'
-              # Mock Guzzle for the tests
-              handler: '@mock_handler'
-
-    mock_handler:
-        class: Aws\MockHandler
+    AsyncAws\EventBridge\EventBridgeClient:
+        autowire: true

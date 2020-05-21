@@ -3,13 +3,13 @@
 namespace Bref\Symfony\Messenger\Service\EventBridge;
 
 use Bref\Context\Context;
-use Bref\Event\Handler;
-use Bref\Event\InvalidLambdaEvent;
+use Bref\Event\EventBridge\EventBridgeEvent;
+use Bref\Event\EventBridge\EventBridgeHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
-final class EventBridgeConsumer implements Handler
+final class EventBridgeConsumer extends EventBridgeHandler
 {
     /** @var MessageBusInterface */
     private $bus;
@@ -32,17 +32,9 @@ final class EventBridgeConsumer implements Handler
         $this->transportName = $transportName;
     }
 
-    /**
-     * @param mixed $event
-     * @throws InvalidLambdaEvent
-     */
-    public function handle($event, Context $context): void
+    public function handleEventBridge(EventBridgeEvent $event, Context $context): void
     {
-        if (! is_array($event) || ! isset($event['detail'])) {
-            throw new InvalidLambdaEvent('EventBridge', $event);
-        }
-
-        $envelope = $this->serializer->decode($event['detail']);
+        $envelope = $this->serializer->decode($event->getDetail());
         $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
     }
 }

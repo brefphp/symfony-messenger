@@ -11,17 +11,7 @@ bref_messenger:
 
 services:
     bref.messenger.sns_client:
-        class: Aws\Sns\SnsClient
-        public: true
-        arguments:
-            -   credentials: false
-                region: us-east-1
-                version: 'latest'
-                # Mock Guzzle for the tests
-                handler: '@mock_handler'
-
-    mock_handler:
-        class: Aws\MockHandler
+        class: AsyncAws\Sns\SnsClient
         public: true
 
     my_sns_consumer:

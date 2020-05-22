@@ -7,17 +7,7 @@ framework:
 
 services:
     bref.messenger.sqs_client:
-        class: Aws\Sqs\SqsClient
-        public: true
-        arguments:
-            -   version: latest
-                region: us-east-1
-                credentials: false
-                # Mock Guzzle for the tests
-                handler: '@mock_handler'
-
-    mock_handler:
-        class: Aws\MockHandler
+        class: AsyncAws\Sqs\SqsClient
         public: true
 
     my_sqs_consumer:

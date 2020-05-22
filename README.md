@@ -183,6 +183,7 @@ return $kernel->getContainer()->get(SnsConsumer::class);
 services:
     Bref\Symfony\Messenger\Service\Sns\SnsConsumer:
         public: true
+        autowire: true
         arguments:
             # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
@@ -249,6 +250,7 @@ return $kernel->getContainer()->get(EventBridgeConsumer::class);
 services:
     Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer:
         public: true
+        autowire: true
         arguments:
             # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
@@ -357,6 +359,7 @@ framework:
 services:
     Bref\Symfony\Messenger\Service\Sqs\SqsConsumer:
         public: true
+        autowire: true
         arguments:
             $transportName: 'async'
             $serializer: '@Happyr\MessageSerializer\Serializer'

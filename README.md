@@ -1,13 +1,13 @@
 Bridge to use Symfony Messenger on AWS Lambda with [Bref](https://bref.sh).
 
-This bridge will allow messages to be dispatched to SQS, SNS and EventBridge, while workers handle those messages on AWS Lambda.
+This bridge allows messages to be dispatched to SQS, SNS or EventBridge, while workers handle those messages on AWS Lambda.
 
 ## Installation
 
 This guide assumes that:
 
 - Symfony is installed
-- Symfony Messenger is installed
+- [Symfony Messenger is installed](https://symfony.com/doc/current/messenger.html#installation)
 - Bref is installed and [configured to deploy Symfony](https://bref.sh/docs/frameworks/symfony.html)
 
 First, install this package:
@@ -25,14 +25,13 @@ return [
 ];
 ```
 
-Now, it is time to choose you the events you are interested in. 
+SQS, SNS and EventBridge can now be used with Symfony Messenger.
 
-## Configuration
+## Usage
 
-This bundle has Symfony Messenger Transports to publish messages and Consumers
-to receive Lambda events from AWS. All Transports are configurable with a DSN and 
-the sections below will show you some examples. They will all follow the normal 
-Symfony pattern: 
+Symfony Messenger dispatches messages. To create a message, follow the [Symfony Messenger documentation](https://symfony.com/doc/current/messenger.html#creating-a-message-handler).
+
+To configure **where** messages are dispatched, all the examples in this documentation are based on [the example from the Symfony documentation](https://symfony.com/doc/current/messenger.html#transports-async-queued-messages): 
 
 ```yaml
 # config/packages/messenger.yaml
@@ -40,61 +39,26 @@ Symfony pattern:
 framework:
     messenger:
         transports:
-            async: 
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
         routing:
              'App\Message\MyMessage': async
 ```
 
-To consume messages that has been on the queue, you need to use a *consumer* service.
-
 ### SQS
 
-The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to
-RabbitMQ. The AWS console lets you create a SQS queue as a "normal queue" or a
-"FIFO queue". 
+The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, create a SQS queue and set its URL as the DSN:
 
-> Note that environment variables `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-do always exist on Lambda. The AWS client will read `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-automatically. 
-
-#### Normal queue
-
-```yaml
-# config/packages/messenger.yaml
-
-framework:
-    messenger:
-        transports:
-            my_sqs: 
-                dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-
-services:
-    my_sqs_consumer:
-        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
-        public: true
-        arguments:
-            - '@Bref\Symfony\Messenger\Service\BusDriver'
-            - '@messenger.routable_message_bus'
-            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
-            - 'my_sqs' # Same as transport name
+```dotenv
+MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789/my-queue
 ```
 
-Now, let's create our Lambda handler (for example `bin/consumer.php`):
+That's it, messages will be dispatched to that queue.
 
-```php
-<?php declare(strict_types=1);
+> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read [`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
 
-require dirname(__DIR__) . '/config/bootstrap.php';
+To consume messages from SQS:
 
-$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
-$kernel->boot();
-
-// Return here the consumer service
-return $kernel->getContainer()->get('my_sqs_consumer');
-```
-
-And finally let's configure that handler in `serverless.yml`:
+1. Create the function that will be invoked by SQS in `serverless.yml`:
 
 ```yaml
 functions:
@@ -105,11 +69,42 @@ functions:
         layers:
             - ${bref:layer.php-74}
         events:
+            # Read more at https://www.serverless.com/framework/docs/providers/aws/events/sqs/
             - sqs:
                 arn: arn:aws:sqs:us-east-1:1234567890:my_sqs_queue
                 # Only 1 item at a time to simplify error handling
                 batchSize: 1
 ```
+
+2. Create the handler script (for example `bin/consumer.php`):
+
+```php
+<?php declare(strict_types=1);
+
+use Bref\Symfony\Messenger\Service\Sqs\SqsConsumer;
+
+require dirname(__DIR__) . '/config/bootstrap.php';
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return the Bref consumer service
+return $kernel->getContainer()->get(SqsConsumer::class);
+```
+
+3. Register and configure the `SqsConsumer` service:
+
+```yaml
+# config/services.yaml
+services:
+    Bref\Symfony\Messenger\Service\Sqs\SqsConsumer:
+        public: true
+        arguments:
+            # Pass the transport name used in config/packages/messenger.yaml
+            $transportName: 'async'
+```
+
+Now, anytime a message is dispatched to SQS, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.
 
 #### FIFO Queue
 
@@ -127,7 +122,7 @@ reverse hostname.
 framework:
     messenger:
         transports:
-            my_sqs_fifo: 
+            async: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue.fifo'
                 options: { message_group_id: com_example }
 ```
@@ -136,112 +131,92 @@ Everything else is identical to the normal SQS queue.
 
 ### SNS
 
-AWS [SNS](https://aws.amazon.com/sns) is "notification" instead of "queues". Messages
-may not arrive in the same order as sent and they might arrive all at once. 
+AWS [SNS](https://aws.amazon.com/sns) is "notification" instead of "queues". Messages may not arrive in the same order as sent, and they might arrive all at once. To use it, create a SNS topic and set it as the DSN:
 
-> Note that environment variables `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-do always exist on Lambda. The AWS client will read `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-automatically. 
-
-```yaml
-# config/packages/messenger.yaml
-framework:
-    messenger:
-        transports:
-            my_sns: 
-                dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
-
-services:
-    my_sns_consumer:
-        class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
-        public: true
-        arguments:
-            - '@Bref\Symfony\Messenger\Service\BusDriver'
-            - '@messenger.routable_message_bus'
-            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
-            - 'my_sns' # Same as transport name
+```dotenv
+MESSENGER_TRANSPORT_DSN=sns://arn:aws:sns:us-east-1:1234567890:foobar
 ```
 
-Now, let's create our Lambda handler (for example `bin/consumer.php`):
+That's it, messages will be dispatched to that topic.
 
-```php
-<?php declare(strict_types=1);
+> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read [`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
 
-require dirname(__DIR__) . '/config/bootstrap.php';
+To consume messages from SNS:
 
-$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
-$kernel->boot();
-
-// Return here the consumer service
-return $kernel->getContainer()->get('my_sns_consumer');
-```
-
-And finally let's configure that handler in `serverless.yml`:
+1. Create the function that will be invoked by SNS in `serverless.yml`:
 
 ```yaml
 functions:
     worker:
         handler: bin/consumer.php
         timeout: 20 # in seconds
+        reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
             - ${bref:layer.php-74}
         events:
+            # Read more at https://www.serverless.com/framework/docs/providers/aws/events/sns/
             - sns:
                 arn: arn:aws:sns:us-east-1:1234567890:my_sns_topic
 ```
 
-### EventBridge
-
-AWS [EventBridge](https://aws.amazon.com/eventbridge/) is a message routing service. It is similar to SNS, but more powerful.
-
-> Note that environment variables `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-do always exist on Lambda. The AWS client will read `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-automatically. 
-
-```yaml
-# config/packages/messenger.yaml
-framework:
-    messenger:
-        transports:
-            # "myapp" is the EventBridge source, i.e. a namespace for your application's messages
-            # This source name will be reused in `serverless.yml` later.
-            my_eventbridge: 'eventbridge://myapp'
-
-services:
-    my_eventbridge_consumer:
-        class: Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer
-        public: true
-        arguments:
-            - '@Bref\Symfony\Messenger\Service\BusDriver'
-            - '@messenger.routable_message_bus'
-            - '@Symfony\Component\Messenger\Transport\Serialization\SerializerInterface'
-            - 'my_eventbridge' # Same as transport name
-```
-
-Now, let's create our Lambda handler (for example `bin/consumer.php`):
+2. Create the handler script (for example `bin/consumer.php`):
 
 ```php
 <?php declare(strict_types=1);
+
+use Bref\Symfony\Messenger\Service\Sns\SnsConsumer;
 
 require dirname(__DIR__) . '/config/bootstrap.php';
 
 $kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
 $kernel->boot();
 
-// Return here the consumer service
-return $kernel->getContainer()->get('my_eventbridge_consumer');
+// Return the Bref consumer service
+return $kernel->getContainer()->get(SnsConsumer::class);
 ```
 
-And finally let's configure that handler in `serverless.yml`:
+3. Register and configure the `SnsConsumer` service:
+
+```yaml
+# config/services.yaml
+services:
+    Bref\Symfony\Messenger\Service\Sns\SnsConsumer:
+        public: true
+        arguments:
+            # Pass the transport name used in config/packages/messenger.yaml
+            $transportName: 'async'
+```
+
+Now, anytime a message is dispatched to SNS, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.
+
+### EventBridge
+
+AWS [EventBridge](https://aws.amazon.com/eventbridge/) is a message routing service. It is similar to SNS, but more powerful. To use it, configure the DSN like so:
+
+```dotenv
+# "myapp" is the EventBridge "source", i.e. a namespace for your application's messages
+# This source name will be reused in `serverless.yml` later.
+MESSENGER_TRANSPORT_DSN=eventbridge://myapp
+```
+
+That's it, messages will be dispatched to EventBridge.
+
+> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read [`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
+
+To consume messages from EventBridge:
+
+1. Create the function that will be invoked by EventBridge in `serverless.yml`:
 
 ```yaml
 functions:
     worker:
         handler: bin/consumer.php
         timeout: 20 # in seconds
+        reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
             - ${bref:layer.php-74}
         events:
+            # Read more at https://www.serverless.com/framework/docs/providers/aws/events/event-bridge/
             -   eventBridge:
                     # This filters events we listen to: only events from the "myapp" source.
                     # This should be the same source defined in config/packages/messenger.yaml
@@ -249,6 +224,36 @@ functions:
                         source:
                             - myapp
 ```
+
+2. Create the handler script (for example `bin/consumer.php`):
+
+```php
+<?php declare(strict_types=1);
+
+use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer;
+
+require dirname(__DIR__) . '/config/bootstrap.php';
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return the Bref consumer service
+return $kernel->getContainer()->get(EventBridgeConsumer::class);
+```
+
+3. Register and configure the `EventBridgeConsumer` service:
+
+```yaml
+# config/services.yaml
+services:
+    Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer:
+        public: true
+        arguments:
+            # Pass the transport name used in config/packages/messenger.yaml
+            $transportName: 'async'
+```
+
+Now, anytime a message is dispatched to EventBridge for that source, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.
 
 ## Error handling
 
@@ -283,9 +288,11 @@ Below is some config to add a dead letter queue.
             MessageRetentionPeriod: 1209600
 ```
 
-## Configuring AWS clients
+## Configuration
 
-By default, AWS clients (SQS, SNS, EventBridge) are preconfigured to work on AWS Lambda (thanks to environement variables populated by AWS Lambda).
+### Configuring AWS clients
+
+By default, AWS clients (SQS, SNS, EventBridge) are preconfigured to work on AWS Lambda (thanks to [environment variables populated by AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime)).
 
 However, it is possible customize the AWS clients, for example to use them outside of AWS Lambda (locally, on EC2…) or to mock them in tests. These clients are registered as Symfony services under the keys:
 
@@ -326,106 +333,30 @@ services:
 
 You can read more [in the official documentation of the SDK](https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_handlers-and-middleware.html).
 
-## Disabling transports
+### Disabling transports
 
 By default, this package registers Symfony Messenger transports for SQS, SNS and EventBridge.
 
 If you want to disable some transports (for example in case of conflict), you can remove `BrefMessengerBundle` from `config/bundles.php` and reconfigure the transports you want in your application's config. Take a look at [`Resources/config/services.yaml`](Resources/config/services.yaml) to copy the part that you want.
 
-## Customize the consumer
+### Customizing the serializer
 
-Each consumer may be configured how ever you want. A good bus to have as default is the
-[RoutableMessageBus](https://github.com/symfony/symfony/blob/4.4/src/Symfony/Component/Messenger/RoutableMessageBus.php)
-which will automatically find the correct bus depending on your transport name. 
-
-The same applies with the Serializer. You may want to use [Happyr message serializer](https://github.com/Happyr/message-serializer)
-for a more reliable API when sending messages between applications. You need to 
-add the serializer on both the transport and the consumer. 
+If you want to change how messages are serialized, for example to use [Happyr message serializer](https://github.com/Happyr/message-serializer), you need to add the serializer on both the transport and the consumer. For example:
 
 ```yaml
 # config/packages/messenger.yaml
-
 framework:
     messenger:
         transports:
-            workqueue: 
+            async: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
                 serializer: 'Happyr\MessageSerializer\Serializer'
 
+# config/services.yaml
 services:
-    my_sqs_consumer:
-        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
+    Bref\Symfony\Messenger\Service\Sqs\SqsConsumer:
+        public: true
         arguments:
-            - '@Bref\Symfony\Messenger\Service\BusDriver'
-            - '@messenger.routable_message_bus'
-            - '@Happyr\MessageSerializer\Serializer'
-            - 'workqueue' # Same as transport name
-```
-
-## Creating your own consumer
-
-If you want to do your own implementation of a consumer, you can extend `SqsHandler` or `SnsHandler` yourself.
-
-This class may do every crazy thing you may want. Remember that if you want
-to share your Consumer implementation, it is a good idea to use `Bref\Symfony\Messenger\Service\BusDriver`
-
-```php
-namespace App\Service;
-
-final class MyConsumer extends \Bref\Event\Sqs\SqsHandler
-{
-    public function handleSqs(SqsEvent $event, Context $context): void
-    {
-        // ...
-        $envelope = $this->serializer->decode(['body' => /* ... */ ]);
-
-        // ...
-    }
-}
-```
-
-## Using more than one consumer
-
-You can, of course, use as many consumers as you want. Sky is the limit!
-
-```yaml
-framework:
-    messenger:
-        buses:
-            messenger.bus.command:
-                middleware:
-                    - validation
-                    - doctrine_transaction
-
-            messenger.bus.event:
-                default_middleware: allow_no_handlers
-                middleware:
-                    - validation
-                    - doctrine_transaction
-
-        transports:
-            failed: 'doctrine://default?queue_name=failed'
-            sync: 'sync://'
-            workqueue: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
-            notification: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
-
-        routing:
-            'App\Message\Ping': workqueue
-            'App\Message\Pong': notification
-
-services:
-    _defaults:
-        autowire: true
-    
-    my_sqs_consumer:
-        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
-        arguments:
-            $bus: '@messenger.routable_message_bus'
-            $transportName: 'workqueue'
-
-    my_sns_consumer:
-        class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
-        arguments:
-            $bus: '@messenger.routable_message_bus'
-            $transportName: 'notification'
+            $transportName: 'async'
+            $serializer: '@Happyr\MessageSerializer\Serializer'
 ```

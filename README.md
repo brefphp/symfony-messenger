@@ -99,6 +99,7 @@ return $kernel->getContainer()->get(SqsConsumer::class);
 services:
     Bref\Symfony\Messenger\Service\Sqs\SqsConsumer:
         public: true
+        autowire: true
         arguments:
             # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'

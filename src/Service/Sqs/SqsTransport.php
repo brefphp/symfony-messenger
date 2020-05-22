@@ -2,7 +2,8 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
-use Aws\Sqs\SqsClient;
+use AsyncAws\Sqs\SqsClient;
+use AsyncAws\Sqs\ValueObject\MessageAttributeValue;
 use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
@@ -41,10 +42,10 @@ final class SqsTransport implements TransportInterface
         $headers = $encodedMessage['headers'] ?? [];
         $arguments = [
             'MessageAttributes' => [
-                'Headers' => [
+                'Headers' => new MessageAttributeValue([
                     'DataType' => 'String',
                     'StringValue' => json_encode($headers, JSON_THROW_ON_ERROR),
-                ],
+                ])
             ],
             'MessageBody' => $encodedMessage['body'],
             'QueueUrl' => $this->queueUrl,
@@ -57,11 +58,12 @@ final class SqsTransport implements TransportInterface
 
         try {
             $result = $this->sqs->sendMessage($arguments);
+            $messageId = $result->getMessageId();
         } catch (Throwable $e) {
             throw new TransportException($e->getMessage(), 0, $e);
         }
 
-        if ($result->hasKey('MessageId') === false) {
+        if ($messageId === false) {
             throw new TransportException('Could not add a message to the SQS queue');
         }
 

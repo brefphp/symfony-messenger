@@ -35,7 +35,10 @@ final class SnsConsumer extends SnsHandler
     public function handleSns(SnsEvent $event, Context $context): void
     {
         foreach ($event->getRecords() as $record) {
-            $envelope = $this->serializer->decode(['body' => $record->getMessage()]);
+            $record->getMessageAttributes();
+            $headers = $attributes['Headers'] ?? '[]';
+            $envelope = $this->serializer->decode(['body' => $record->getMessage(), 'headers' => json_decode($headers, true)]);
+
             $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
         }
     }

@@ -257,36 +257,36 @@ Now, anytime a message is dispatched to EventBridge for that source, the Lambda 
 
 ## Error handling
 
-> This section is really raw, feel free to contribute to improve it.
+AWS Lambda has error handling mechanisms (retrying and handling failed messages). Because of that, this package does not integrates Symfony Messenger's retry mechanism. Instead, it works with Lambda's retry mechanism.
 
-When a message fails with SQS, by default it will go back to the SQS queue. It will be
-retied until the end of time. 
+> This section is work in progress, feel free to contribute to improve it.
 
-If you are using SNS and the handler fails, then your message is forgotten. 
-
-Below is some config to add a dead letter queue. 
+When a message fails with SQS, by default it will go back to the SQS queue. It will be retried until the message expires. Here is an example to setup retries and "dead letter queue" with SQS:
 
 ```yaml
 # serverless.yml
-
-    queue:
-        Type: AWS::SQS::Queue
-        Properties:
-            # This needs to be at least 6 times the lambda function's timeout
-            # See https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
-            VisibilityTimeout: '960'
-            RedrivePolicy:
-                deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
-                # Jobs will be retried 5 times
-                # The number needs to be at least 5 per https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
-                maxReceiveCount: 5
-    # The dead letter queue is a SQS queue that receives messages that failed to be processed
-    DeadLetterQueue:
-        Type: AWS::SQS::Queue
-        Properties:
-            # Messages are stored up to 14 days (the max)
-            MessageRetentionPeriod: 1209600
+resources:
+    Resources:
+        Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+                # This needs to be at least 6 times the lambda function's timeout
+                # See https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+                VisibilityTimeout: '960'
+                RedrivePolicy:
+                    deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+                    # Jobs will be retried 5 times
+                    # The number needs to be at least 5 per https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+                    maxReceiveCount: 5
+        # The dead letter queue is a SQS queue that receives messages that failed to be processed
+        DeadLetterQueue:
+            Type: AWS::SQS::Queue
+            Properties:
+                # Messages are stored up to 14 days (the max)
+                MessageRetentionPeriod: 1209600
 ```
+
+When using SNS and EventBridge, messages will be retried by default 2 times.
 
 ## Configuration
 

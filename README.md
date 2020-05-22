@@ -54,7 +54,7 @@ MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789/my-queue
 
 That's it, messages will be dispatched to that queue.
 
-> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read [`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
+> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read them [from environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
 
 To consume messages from SQS:
 
@@ -140,7 +140,7 @@ MESSENGER_TRANSPORT_DSN=sns://arn:aws:sns:us-east-1:1234567890:foobar
 
 That's it, messages will be dispatched to that topic.
 
-> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read [`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
+> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read them [from environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
 
 To consume messages from SNS:
 
@@ -202,7 +202,7 @@ MESSENGER_TRANSPORT_DSN=eventbridge://myapp
 
 That's it, messages will be dispatched to EventBridge.
 
-> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read [`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
+> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read them [from environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
 
 To consume messages from EventBridge:
 

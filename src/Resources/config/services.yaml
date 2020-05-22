@@ -3,3 +3,36 @@ services:
     Bref\Symfony\Messenger\Service\SimpleBusDriver:
         arguments:
             - '@logger'
+
+    # SQS
+    Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory:
+        tags: ['messenger.transport_factory']
+        autowire: true
+    bref.messenger.sqs_client:
+        class: Aws\Sqs\SqsClient
+        public: true
+        arguments:
+            -   region: '%env(default::AWS_REGION)%'
+                version: 2012-11-05
+
+    # SNS
+    Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory:
+        tags: ['messenger.transport_factory']
+        autowire: true
+    bref.messenger.sns_client:
+        class: Aws\Sns\SnsClient
+        public: true
+        arguments:
+            -   region: '%env(default::AWS_REGION)%'
+                version: 2010-03-31
+
+    # EventBridge
+    Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory:
+        tags: ['messenger.transport_factory']
+        autowire: true
+    bref.messenger.eventbridge_client:
+        class: Aws\EventBridge\EventBridgeClient
+        public: true
+        arguments:
+            -   region: '%env(default::AWS_REGION)%'
+                version: latest

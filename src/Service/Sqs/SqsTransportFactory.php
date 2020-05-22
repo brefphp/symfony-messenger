@@ -2,24 +2,26 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
-use Aws\Sqs\SqsClient;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
 final class SqsTransportFactory implements TransportFactoryInterface
 {
-    /** @var SqsClient */
-    private $sqs;
+    /** @var ContainerInterface */
+    private $container;
 
-    public function __construct(SqsClient $sqs)
+    public function __construct(ContainerInterface $container)
     {
-        $this->sqs = $sqs;
+        $this->container = $container;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        return new SqsTransport($this->sqs, $serializer, $dsn, $options['message_group_id'] ?? null);
+        $sqs = $this->container->get('bref.messenger.sqs_client');
+
+        return new SqsTransport($sqs, $serializer, $dsn, $options['message_group_id'] ?? null);
     }
 
     public function supports(string $dsn, array $options): bool

@@ -69,16 +69,7 @@ framework:
             my_sqs: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
 
-bref_messenger:
-    sqs: true # Register the SQS transport
-
 services:
-    Aws\Sqs\SqsClient:
-        factory: [Aws\Sqs\SqsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2012-11-05'
-
     my_sqs_consumer:
         class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         public: true
@@ -160,16 +151,7 @@ framework:
             my_sns: 
                 dsn: 'sns://arn:aws:sns:us-east-1:1234567890:foobar'
 
-bref_messenger:
-    sns: true # Register the SNS transport
-
 services:
-    Aws\Sns\SnsClient:
-        factory: [Aws\Sns\SnsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2010-03-31'
-
     my_sns_consumer:
         class: Bref\Symfony\Messenger\Service\Sns\SnsConsumer
         public: true
@@ -225,15 +207,7 @@ framework:
             # This source name will be reused in `serverless.yml` later.
             my_eventbridge: 'eventbridge://myapp'
 
-bref_messenger:
-    eventbridge: true # Register the EventBridge transport
-
 services:
-    Aws\EventBridge\EventBridgeClient:
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: 'latest'
-
     my_eventbridge_consumer:
         class: Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer
         public: true
@@ -307,8 +281,56 @@ Below is some config to add a dead letter queue.
         Properties:
             # Messages are stored up to 14 days (the max)
             MessageRetentionPeriod: 1209600
-
 ```
+
+## Configuring AWS clients
+
+By default, AWS clients (SQS, SNS, EventBridge) are preconfigured to work on AWS Lambda (thanks to environement variables populated by AWS Lambda).
+
+However, it is possible customize the AWS clients, for example to use them outside of AWS Lambda (locally, on EC2…) or to mock them in tests. These clients are registered as Symfony services under the keys:
+
+- `bref.messenger.sqs_client`
+- `bref.messenger.sns_client`
+- `bref.messenger.eventbridge_client`
+
+For example to customize the SQS client:
+
+```yaml
+services:
+    bref.messenger.sqs_client:
+        class: Aws\Sqs\SqsClient
+        public: true # the AWS clients must be public
+        arguments:
+            # Apply your own config here
+            -   version: latest
+                region: us-east-1
+```
+
+A common use case is mocking clients for tests:
+
+```yaml
+services:
+    bref.messenger.sqs_client:
+        class: Aws\Sqs\SqsClient
+        public: true
+        arguments:
+            -   version: latest
+                region: us-east-1
+                credentials: false
+                # Mock Guzzle for the tests
+                handler: '@mock_handler'
+    mock_handler:
+        class: Aws\MockHandler
+        public: true
+```
+
+You can read more [in the official documentation of the SDK](https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_handlers-and-middleware.html).
+
+## Disabling transports
+
+By default, this package registers Symfony Messenger transports for SQS, SNS and EventBridge.
+
+If you want to disable some transports (for example in case of conflict), you can remove `BrefMessengerBundle` from `config/bundles.php` and reconfigure the transports you want in your application's config. Take a look at [`Resources/config/services.yaml`](Resources/config/services.yaml) to copy the part that you want.
 
 ## Customize the consumer
 
@@ -322,6 +344,7 @@ add the serializer on both the transport and the consumer.
 
 ```yaml
 # config/packages/messenger.yaml
+
 framework:
     messenger:
         transports:
@@ -329,16 +352,7 @@ framework:
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue'
                 serializer: 'Happyr\MessageSerializer\Serializer'
 
-bref_messenger:
-    sqs: true # Register the SQS transport
-
 services:
-    Aws\Sqs\SqsClient:
-        factory: [Aws\Sqs\SqsClient, factory]
-        arguments:
-            - region: '%env(AWS_REGION)%'
-              version: '2012-11-05'
-
     my_sqs_consumer:
         class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         arguments:
@@ -346,7 +360,6 @@ services:
             - '@messenger.routable_message_bus'
             - '@Happyr\MessageSerializer\Serializer'
             - 'workqueue' # Same as transport name
-
 ```
 
 ## Creating your own consumer
@@ -399,10 +412,6 @@ framework:
         routing:
             'App\Message\Ping': workqueue
             'App\Message\Pong': notification
-
-bref_messenger:
-    sns: true
-    sqs: true
 
 services:
     _defaults:

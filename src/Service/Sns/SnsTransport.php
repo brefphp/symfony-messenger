@@ -2,7 +2,8 @@
 
 namespace Bref\Symfony\Messenger\Service\Sns;
 
-use Aws\Sns\SnsClient;
+use AsyncAws\Sns\SnsClient;
+use AsyncAws\Sns\ValueObject\MessageAttributeValue;
 use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
@@ -32,23 +33,24 @@ final class SnsTransport implements TransportInterface
         $encodedMessage = $this->serializer->encode($envelope);
         $headers = $encodedMessage['headers'] ?? [];
         $arguments = [
-            'MessageAttributes' => [
+            'MessageAttributes' => new MessageAttributeValue([
                 'Headers' => [
                     'DataType' => 'String',
                     'StringValue' => json_encode($headers, JSON_THROW_ON_ERROR),
                 ],
-            ],
+            ]),
             'Message' => $encodedMessage['body'],
             'TopicArn' => $this->topic,
         ];
 
         try {
             $result = $this->sns->publish($arguments);
+            $messageId = $result->getMessageId();
         } catch (Throwable $e) {
             throw new TransportException($e->getMessage(), 0, $e);
         }
 
-        if ($result->hasKey('MessageId') === false) {
+        if ($messageId === false) {
             throw new TransportException('Could not add a message to the SNS topic');
         }
 

@@ -2,14 +2,13 @@
 
 namespace Bref\Symfony\Messenger\Test\Functional\Service\Sqs;
 
-use Aws\CommandInterface;
-use Aws\MockHandler;
-use Aws\Result;
+use AsyncAws\Core\Test\ResultMockFactory;
+use AsyncAws\Sqs\Result\SendMessageResult;
+use AsyncAws\Sqs\SqsClient;
 use Bref\Symfony\Messenger\Service\Sqs\SqsTransport;
 use Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
-use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
@@ -35,20 +34,22 @@ class SqsTransportTest extends BaseFunctionalTest
 
     public function test send message(): void
     {
-        /** @var MockHandler $mock */
-        $mock = $this->container->get('mock_handler');
-        $queueUrl = '';
-        $mock->append(function (CommandInterface $cmd, RequestInterface $request) use (&$queueUrl) {
-            $queueUrl = (string) $request->getUri();
+        $sqs = $this->getMockBuilder(SqsClient::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['sendMessage'])
+            ->getMock();
+        $sqs->expects($this->once())
+            ->method('sendMessage')
+            ->with($this->callback(function ($input) {
+                $this->assertEquals('https://sqs.us-east-1.amazonaws.com/1234567890/bref-test', $input['QueueUrl']);
 
-            return new Result(['MessageId' => 'abcd']);
-        });
+                return true;
+            }))
+            ->willReturn(ResultMockFactory::create(SendMessageResult::class, ['MessageId' => 4711]));
+        $this->container->set('bref.messenger.sqs_client', $sqs);
 
         /** @var MessageBusInterface $bus */
         $bus = $this->container->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage('hello'));
-
-        // Check that the URL is correct
-        $this->assertEquals('https://sqs.us-east-1.amazonaws.com/1234567890/bref-test', $queueUrl);
     }
 }

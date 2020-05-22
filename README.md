@@ -308,33 +308,13 @@ For example to customize the SQS client:
 ```yaml
 services:
     bref.messenger.sqs_client:
-        class: Aws\Sqs\SqsClient
+        class: AsyncAws\Sqs\SqsClient
         public: true # the AWS clients must be public
         arguments:
             # Apply your own config here
-            -   version: latest
+            -
                 region: us-east-1
 ```
-
-A common use case is mocking clients for tests:
-
-```yaml
-services:
-    bref.messenger.sqs_client:
-        class: Aws\Sqs\SqsClient
-        public: true
-        arguments:
-            -   version: latest
-                region: us-east-1
-                credentials: false
-                # Mock Guzzle for the tests
-                handler: '@mock_handler'
-    mock_handler:
-        class: Aws\MockHandler
-        public: true
-```
-
-You can read more [in the official documentation of the SDK](https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_handlers-and-middleware.html).
 
 ### Disabling transports
 

@@ -2,7 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Service\EventBridge;
 
-use Aws\EventBridge\EventBridgeClient;
+use AsyncAws\EventBridge\EventBridgeClient;
 use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
@@ -43,14 +43,16 @@ final class EventBridgeTransport implements TransportInterface
 
         try {
             $result = $this->eventBridge->putEvents($arguments);
+            $failedCount = $result->getFailedEntryCount();
         } catch (Throwable $e) {
             throw new TransportException($e->getMessage(), 0, $e);
         }
 
-        $failedCount = $result->get('FailedEntryCount');
         if ($failedCount > 0) {
-            $reason = $result->get('Entries')[0]['ErrorMessage'] ?? 'no reason provided';
-            throw new TransportException("$failedCount message(s) could not be published to EventBridge: $reason.");
+            foreach ($result->getEntries() as $entry) {
+                $reason = $entry->getErrorMessage() ?? 'no reason provided';
+                throw new TransportException("$failedCount message(s) could not be published to EventBridge: $reason.");
+            }
         }
 
         return $envelope;

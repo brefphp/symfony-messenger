@@ -5,12 +5,10 @@ namespace Bref\Symfony\Messenger\Test\Functional\Service\Sns;
 use AsyncAws\Core\Test\ResultMockFactory;
 use AsyncAws\Sns\Result\PublishResponse;
 use AsyncAws\Sns\SnsClient;
-
 use Bref\Symfony\Messenger\Service\Sns\SnsTransport;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
-use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
@@ -48,7 +46,7 @@ class SnsTransportTest extends BaseFunctionalTest
 
                 return true;
             }))
-            ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId'=>4711]));
+            ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
         $this->container->set('bref.messenger.sns_client', $sns);
 
         /** @var MessageBusInterface $bus */

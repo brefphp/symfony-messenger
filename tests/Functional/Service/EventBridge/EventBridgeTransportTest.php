@@ -5,13 +5,10 @@ namespace Bref\Symfony\Messenger\Test\Functional\Service\EventBridge;
 use AsyncAws\Core\Test\ResultMockFactory;
 use AsyncAws\EventBridge\EventBridgeClient;
 use AsyncAws\EventBridge\Result\PutEventsResponse;
-use AsyncAws\Sns\Result\PublishResponse;
-use AsyncAws\Sns\SnsClient;
 use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransport;
 use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
-use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
@@ -53,9 +50,8 @@ class EventBridgeTransportTest extends BaseFunctionalTest
 
                 return true;
             }))
-            ->willReturn(ResultMockFactory::create(PutEventsResponse::class, ['FailedEntryCount'=>0]));
+            ->willReturn(ResultMockFactory::create(PutEventsResponse::class, ['FailedEntryCount' => 0]));
         $this->container->set('bref.messenger.eventbridge_client', $sns);
-
 
         /** @var MessageBusInterface $bus */
         $bus = $this->container->get(MessageBusInterface::class);

@@ -9,7 +9,6 @@ use Bref\Symfony\Messenger\Service\Sqs\SqsTransport;
 use Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
-use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
@@ -46,7 +45,7 @@ class SqsTransportTest extends BaseFunctionalTest
 
                 return true;
             }))
-            ->willReturn(ResultMockFactory::create(SendMessageResult::class, ['MessageId'=>4711]));
+            ->willReturn(ResultMockFactory::create(SendMessageResult::class, ['MessageId' => 4711]));
         $this->container->set('bref.messenger.sqs_client', $sqs);
 
         /** @var MessageBusInterface $bus */

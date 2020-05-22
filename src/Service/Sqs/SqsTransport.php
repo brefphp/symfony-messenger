@@ -45,7 +45,7 @@ final class SqsTransport implements TransportInterface
                 'Headers' => new MessageAttributeValue([
                     'DataType' => 'String',
                     'StringValue' => json_encode($headers, JSON_THROW_ON_ERROR),
-                ])
+                ]),
             ],
             'MessageBody' => $encodedMessage['body'],
             'QueueUrl' => $this->queueUrl,

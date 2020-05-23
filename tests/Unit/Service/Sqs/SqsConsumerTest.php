@@ -39,7 +39,7 @@ class SqsConsumerTest extends TestCase
                 [
                     'body' => $body,
                     'messageAttributes' => [
-                        'Headers' => $headers,
+                        'Headers' => ['stringValue'=>json_encode($headers)],
                     ],
                     'eventSource'=>'aws:sqs',
                 ],

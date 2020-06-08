@@ -41,7 +41,7 @@ class SqsConsumerTest extends TestCase
                     'messageAttributes' => [
                         'Content-Type' => [
                             'dataType' => 'String',
-                            'stringValue' => 'application/json'
+                            'stringValue' => 'application/json',
                         ],
                     ],
                     'eventSource'=>'aws:sqs',

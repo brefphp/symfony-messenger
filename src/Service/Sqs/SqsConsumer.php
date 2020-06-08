@@ -11,6 +11,8 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 final class SqsConsumer extends SqsHandler
 {
+    private const MESSAGE_ATTRIBUTE_NAME = 'X-Symfony-Messenger';
+
     /** @var MessageBusInterface */
     private $bus;
     /** @var SerializerInterface */
@@ -36,12 +38,17 @@ final class SqsConsumer extends SqsHandler
     {
         foreach ($event->getRecords() as $record) {
             $headers = [];
+            $attributes = $record->getMessageAttributes();
 
-            foreach ($record->getMessageAttributes() as $name => $attribute) {
+            if (isset($attributes[self::MESSAGE_ATTRIBUTE_NAME]) && $attributes[self::MESSAGE_ATTRIBUTE_NAME]['dataType'] === 'String') {
+                $headers = json_decode($attributes[self::MESSAGE_ATTRIBUTE_NAME]['stringValue'], true);
+                unset($attributes[self::MESSAGE_ATTRIBUTE_NAME]);
+            }
+
+            foreach ($attributes as $name => $attribute) {
                 if ($attribute['dataType'] !== 'String') {
                     continue;
                 }
-
                 $headers[$name] = $attribute['stringValue'];
             }
 

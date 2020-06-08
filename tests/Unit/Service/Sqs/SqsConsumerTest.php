@@ -25,7 +25,11 @@ class SqsConsumerTest extends TestCase
             ->onlyMethods(['encode', 'decode'])
             ->getMock();
 
-        $headers = ['Content-Type' => 'application/json'];
+        $specialHeaders = ['Special\Header\Name' => 'some data'];
+
+        $headers = array_merge($specialHeaders, [
+            'Content-Type' => 'application/json',
+        ]);
         $body = 'Test message.';
 
         $serializer->expects($this->once())
@@ -42,6 +46,10 @@ class SqsConsumerTest extends TestCase
                         'Content-Type' => [
                             'dataType' => 'String',
                             'stringValue' => 'application/json',
+                        ],
+                        'X-Symfony-Messenger' => [
+                            'dataType' => 'String',
+                            'stringValue' => json_encode($specialHeaders),
                         ],
                     ],
                     'eventSource'=>'aws:sqs',

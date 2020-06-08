@@ -35,9 +35,17 @@ final class SqsConsumer extends SqsHandler
     public function handleSqs(SqsEvent $event, Context $context): void
     {
         foreach ($event->getRecords() as $record) {
-            $attributes = $record->getMessageAttributes();
-            $headers = $attributes['Headers']['stringValue'] ?? '[]';
-            $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => json_decode($headers, true)]);
+            $headers = [];
+
+            foreach ($record->getMessageAttributes() as $name => $attribute) {
+                if ($attribute['dataType'] !== 'String') {
+                    continue;
+                }
+
+                $headers[$name] = $attribute['stringValue'];
+            }
+
+            $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
 
             $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
         }

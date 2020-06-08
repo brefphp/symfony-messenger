@@ -1,7 +1,7 @@
 framework:
     messenger:
         transports:
-            foo: 'https://sqs.us-east-1.amazonaws.com/1234567890/bref-test'
+            foo: 'sqs://sqs.us-east-1.amazonaws.com/1234567890/bref-test'
         routing:
             'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
 

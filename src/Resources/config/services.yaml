@@ -4,14 +4,6 @@ services:
         arguments:
             - '@logger'
 
-    # SQS
-    Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory:
-        tags: ['messenger.transport_factory']
-        autowire: true
-    bref.messenger.sqs_client:
-        class: AsyncAws\Sqs\SqsClient
-        public: true
-
 
     # SNS
     Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory:

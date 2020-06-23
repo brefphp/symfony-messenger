@@ -4,11 +4,6 @@ services:
         arguments:
             - '@logger'
 
-    # SQS
-    Bref\Symfony\Messenger\Service\Sqs\SqsTransportFactory:
-      decorates: messenger.transport.sqs.factory
-      arguments: ['@.inner']
-
     # SNS
     Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory:
         tags: ['messenger.transport_factory']

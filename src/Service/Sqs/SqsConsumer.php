@@ -6,6 +6,7 @@ use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
@@ -54,7 +55,7 @@ final class SqsConsumer extends SqsHandler
 
             $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
 
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
+            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(new AmazonSqsReceivedStamp($record->getMessageId())), $this->transportName);
         }
     }
 }

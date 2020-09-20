@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Unit\Service\Sqs;
+namespace Bref\Symfony\Messenger\Test\Unit\Service\Sqs;
 
 use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;

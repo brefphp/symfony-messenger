@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Unit\Service\Sns;
+namespace Bref\Symfony\Messenger\Test\Unit\Service\Sns;
 
 use Bref\Context\Context;
 use Bref\Event\Sns\SnsEvent;

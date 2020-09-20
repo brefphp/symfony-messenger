@@ -33,12 +33,9 @@ final class SnsTransport implements TransportInterface
         $encodedMessage = $this->serializer->encode($envelope);
         $headers = $encodedMessage['headers'] ?? [];
         $arguments = [
-            'MessageAttributes' => new MessageAttributeValue([
-                'Headers' => [
-                    'DataType' => 'String',
-                    'StringValue' => json_encode($headers, JSON_THROW_ON_ERROR),
-                ],
-            ]),
+            'MessageAttributes' => [
+                'Headers' => new MessageAttributeValue(['DataType' => 'String', 'StringValue' => json_encode($headers, JSON_THROW_ON_ERROR)]),
+            ],
             'Message' => $encodedMessage['body'],
             'TopicArn' => $this->topic,
         ];
@@ -50,7 +47,7 @@ final class SnsTransport implements TransportInterface
             throw new TransportException($e->getMessage(), 0, $e);
         }
 
-        if ($messageId === false) {
+        if ($messageId === null) {
             throw new TransportException('Could not add a message to the SNS topic');
         }
 

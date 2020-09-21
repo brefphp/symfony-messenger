@@ -63,7 +63,7 @@ final class SqsTransport implements TransportInterface
             throw new TransportException($e->getMessage(), 0, $e);
         }
 
-        if ($messageId === false) {
+        if ($messageId === null) {
             throw new TransportException('Could not add a message to the SQS queue');
         }
 

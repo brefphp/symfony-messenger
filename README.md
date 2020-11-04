@@ -92,7 +92,8 @@ $kernel->boot();
 return $kernel->getContainer()->get(SqsConsumer::class);
 ```
 
-Symfony 5.1.x
+If you are using Symfony 5.1, use this instead:
+
 ```php
 <?php declare(strict_types=1);
 
@@ -109,7 +110,6 @@ $kernel->boot();
 // Return the Bref consumer service
 return $kernel->getContainer()->get(SqsConsumer::class);
 ```
-
 
 3. Register and configure the `SqsConsumer` service:
 

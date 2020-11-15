@@ -54,6 +54,10 @@ MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789/my-queue
 
 That's it, messages will be dispatched to that queue.
 
+The implementation uses the SQS transport provided by [Symfony Amazon SQS Messenger](https://symfony.com/doc/current/messenger.html#amazon-sqs), 
+so all those features are supported. If you already use that transport, the transition to AWS Lamdba is very easy and 
+should not require any change for dispatching messages. 
+
 > Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read them [from environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
 
 To consume messages from SQS:
@@ -128,13 +132,8 @@ Now, anytime a message is dispatched to SQS, the Lambda function will be called.
 
 #### FIFO Queue
 
-The FIFO queue guarantees exactly once delivery. To differentiate messages we must
-either configure the FIFO queue to look at a specific parameter in the message, or
-let AWS calculate a hash over the message body. The latter is simpler and it is enabled
-by using "Content-Based Deduplication". 
-
-We also need to specify what message group we are using. It can be your applications
-reverse hostname. 
+The [FIFO queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html) guarantees 
+exactly once delivery, and has a mandatory queue name suffix `.fifo`:
 
 ```yaml
 # config/packages/messenger.yaml
@@ -144,9 +143,29 @@ framework:
         transports:
             async: 
                 dsn: 'https://sqs.us-east-1.amazonaws.com/123456789/my-queue.fifo'
-                options: { message_group_id: com_example }
 ```
 
+```yaml
+# serverless.yml
+resources:
+    Resources:
+        Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+                QueueName: my-queue.fifo
+                FifoQueue: true
+```
+
+[Symfony Amazon SQS Messenger](https://symfony.com/doc/current/messenger.html#amazon-sqs)  will automatically calculate/set 
+the `MessageGroupId` and `MessageDeduplicationId` parameters required for FIFO queues, but you can set them explicitly:
+
+```php
+use Symfony\Component\Messenger\MessageBus;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsFifoStamp;
+
+/* @var MessageBus $messageBus */
+$messageBus->dispatch(new MyAsyncMessage(), [new AmazonSqsFifoStamp('my-group-message-id', 'my-deduplication-id')]);
+```
 Everything else is identical to the normal SQS queue.
 
 ### SNS

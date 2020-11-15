@@ -11,7 +11,7 @@ services:
         public: true
 
     my_sqs_consumer:
-        class: Bref\Messenger\Service\Sqs\SqsConsumer
+        class: Bref\Symfony\Messenger\Service\Sqs\SqsConsumer
         arguments:
             - '@Bref\Symfony\Messenger\Service\BusDriver'
             - '@messenger.routable_message_bus'

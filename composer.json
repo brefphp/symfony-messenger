@@ -28,7 +28,7 @@
         "async-aws/event-bridge": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.5",
+        "phpunit/phpunit": "^9.4",
         "mnapoli/hard-mode": "^0.2.0",
         "phpstan/phpstan": "^0.12.0",
         "symfony/framework-bundle": "^4.3 || ^5.0",

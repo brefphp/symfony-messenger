@@ -6,11 +6,14 @@ use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 final class SqsConsumer extends SqsHandler
 {
+    private const MESSAGE_ATTRIBUTE_NAME = 'X-Symfony-Messenger';
+
     /** @var MessageBusInterface */
     private $bus;
     /** @var SerializerInterface */
@@ -35,11 +38,24 @@ final class SqsConsumer extends SqsHandler
     public function handleSqs(SqsEvent $event, Context $context): void
     {
         foreach ($event->getRecords() as $record) {
+            $headers = [];
             $attributes = $record->getMessageAttributes();
-            $headers = $attributes['Headers']['stringValue'] ?? '[]';
-            $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => json_decode($headers, true)]);
 
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
+            if (isset($attributes[self::MESSAGE_ATTRIBUTE_NAME]) && $attributes[self::MESSAGE_ATTRIBUTE_NAME]['dataType'] === 'String') {
+                $headers = json_decode($attributes[self::MESSAGE_ATTRIBUTE_NAME]['stringValue'], true);
+                unset($attributes[self::MESSAGE_ATTRIBUTE_NAME]);
+            }
+
+            foreach ($attributes as $name => $attribute) {
+                if ($attribute['dataType'] !== 'String') {
+                    continue;
+                }
+                $headers[$name] = $attribute['stringValue'];
+            }
+
+            $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
+
+            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(new AmazonSqsReceivedStamp($record->getMessageId())), $this->transportName);
         }
     }
 }

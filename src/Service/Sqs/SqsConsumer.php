@@ -37,25 +37,36 @@ final class SqsConsumer extends SqsHandler
 
     public function handleSqs(SqsEvent $event, Context $context): void
     {
-        foreach ($event->getRecords() as $record) {
-            $headers = [];
-            $attributes = $record->getMessageAttributes();
+        $records = $event->getRecords();
 
-            if (isset($attributes[self::MESSAGE_ATTRIBUTE_NAME]) && $attributes[self::MESSAGE_ATTRIBUTE_NAME]['dataType'] === 'String') {
-                $headers = json_decode($attributes[self::MESSAGE_ATTRIBUTE_NAME]['stringValue'], true);
-                unset($attributes[self::MESSAGE_ATTRIBUTE_NAME]);
-            }
-
-            foreach ($attributes as $name => $attribute) {
-                if ($attribute['dataType'] !== 'String') {
-                    continue;
-                }
-                $headers[$name] = $attribute['stringValue'];
-            }
-
-            $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
-
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(new AmazonSqsReceivedStamp($record->getMessageId())), $this->transportName);
+        if (count($records) === 0) {
+            return;
         }
+
+        if (count($records) > 1) {
+            // @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-lambda-function-trigger.html
+            throw new \LogicException('Lambda triggers can only poll 1 message at a time');
+        }
+
+        $record = current($records);
+
+        $headers = [];
+        $attributes = $record->getMessageAttributes();
+
+        if (isset($attributes[self::MESSAGE_ATTRIBUTE_NAME]) && $attributes[self::MESSAGE_ATTRIBUTE_NAME]['dataType'] === 'String') {
+            $headers = json_decode($attributes[self::MESSAGE_ATTRIBUTE_NAME]['stringValue'], true);
+            unset($attributes[self::MESSAGE_ATTRIBUTE_NAME]);
+        }
+
+        foreach ($attributes as $name => $attribute) {
+            if ($attribute['dataType'] !== 'String') {
+                continue;
+            }
+            $headers[$name] = $attribute['stringValue'];
+        }
+
+        $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
+
+        $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(new AmazonSqsReceivedStamp($record->getMessageId())), $this->transportName);
     }
 }

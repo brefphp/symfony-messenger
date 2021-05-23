@@ -7,17 +7,15 @@ services:
     # SNS
     Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory:
         tags: ['messenger.transport_factory']
-        autowire: true
+        arguments:
+            - '@bref.messenger.sns_client'
     bref.messenger.sns_client:
         class: AsyncAws\Sns\SnsClient
-        public: true
-
 
     # EventBridge
     Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory:
         tags: ['messenger.transport_factory']
-        autowire: true
+        arguments:
+            - '@bref.messenger.eventbridge_client'
     bref.messenger.eventbridge_client:
         class: AsyncAws\EventBridge\EventBridgeClient
-        public: true
-

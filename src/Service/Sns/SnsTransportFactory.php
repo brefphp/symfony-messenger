@@ -2,26 +2,24 @@
 
 namespace Bref\Symfony\Messenger\Service\Sns;
 
-use Psr\Container\ContainerInterface;
+use AsyncAws\Sns\SnsClient;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
 final class SnsTransportFactory implements TransportFactoryInterface
 {
-    /** @var ContainerInterface */
-    private $container;
+    /** @var SnsClient */
+    private $sns;
 
-    public function __construct(ContainerInterface $container)
+    public function __construct(SnsClient $sns)
     {
-        $this->container = $container;
+        $this->sns = $sns;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
-        $sns = $this->container->get('bref.messenger.sns_client');
-
-        return new SnsTransport($sns, $serializer, substr($dsn, 6));
+        return new SnsTransport($this->sns, $serializer, substr($dsn, 6));
     }
 
     public function supports(string $dsn, array $options): bool

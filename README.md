@@ -39,14 +39,15 @@ To configure **where** messages are dispatched, all the examples in this documen
 framework:
     messenger:
         transports:
-            async: '%env(MESSENGER_TRANSPORT_DSN)%'       
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
         routing:
              'App\Message\MyMessage': async
 ```
 
 ### SQS
 
-The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, set its URL as the `MESSENGER_TRANSPORT_DSN`:
+The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, set its URL in the 
+envrionment variable `MESSENGER_TRANSPORT_DSN`:
 
 ```dotenv
 MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789/my-queue

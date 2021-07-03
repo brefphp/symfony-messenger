@@ -39,14 +39,14 @@ To configure **where** messages are dispatched, all the examples in this documen
 framework:
     messenger:
         transports:
-            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'       
         routing:
              'App\Message\MyMessage': async
 ```
 
 ### SQS
 
-The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, create a SQS queue and set its URL as the DSN:
+The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, set its URL as the `MESSENGER_TRANSPORT_DSN`:
 
 ```dotenv
 MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789/my-queue
@@ -58,11 +58,62 @@ The implementation uses the SQS transport provided by [Symfony Amazon SQS Messen
 so all those features are supported. If you already use that transport, the transition to AWS Lamdba is very easy and 
 should not require any change for dispatching messages. 
 
-> Note: when running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read them [from environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
+#### Create the SQS queue
 
-To consume messages from SQS:
+You can create the Queue yourself in the Console, write custom Cloudformation 
+or use [Lift's Queue construct](https://github.com/getlift/lift/blob/master/docs/queue.md) that will handle that for you. 
 
-1. Create the function that will be invoked by SQS in `serverless.yml`:
+Here is a simple example with Lift, check out the [full documentation](https://github.com/getlift/lift/blob/master/docs/queue.md) for more details.
+
+```yaml
+# serverless.yml
+
+service: my-app
+provider:
+    name: aws
+    environment:
+        ...
+        MESSENGER_TRANSPORT_DSN: ${construct:jobs.queueUrl}
+
+constructs:
+    jobs:
+        type: queue
+        worker:
+            handler: bin/consumer.php
+            timeout: 20 # in seconds
+            reservedConcurrency: 5 # max. 5 messages processed in parallel
+            layers:
+                - ${bref:layer.php-80}
+
+plugins:
+    - serverless-lift
+```
+
+In all cases, you would want to disable `auto_setup` to avoid extra requests and permission issues.
+
+```yaml
+# config/packages/messenger.yaml
+
+framework:
+    messenger:
+        transports:
+            async: 
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    auto_setup: false
+```
+
+#### Add permissions
+
+When running Symfony on AWS Lambda, it is not necessary to configure credentials. The AWS client will read them [from environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime) automatically.
+
+You just have to provide the correct [role statements](https://www.serverless.com/framework/docs/providers/aws/guide/iam/) in `serverless.yml` and Lambda will take care of the rest. The required IAM permission to publish to SQS using Messenger is `sqs:SendMessage` on the given queue.
+
+If you use Lift, this is done automatically for you.
+
+#### Consume messages from SQS
+
+1.If you don't use Lift, create the function that will be invoked by SQS in `serverless.yml`:
 
 ```yaml
 functions:
@@ -71,7 +122,7 @@ functions:
         timeout: 20 # in seconds
         reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
-            - ${bref:layer.php-74}
+            - ${bref:layer.php-80}
         events:
             # Read more at https://www.serverless.com/framework/docs/providers/aws/events/sqs/
             - sqs:
@@ -191,7 +242,7 @@ functions:
         timeout: 20 # in seconds
         reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
-            - ${bref:layer.php-74}
+            - ${bref:layer.php-80}
         events:
             # Read more at https://www.serverless.com/framework/docs/providers/aws/events/sns/
             - sns:
@@ -254,7 +305,7 @@ functions:
         timeout: 20 # in seconds
         reservedConcurrency: 5 # max. 5 messages processed in parallel
         layers:
-            - ${bref:layer.php-74}
+            - ${bref:layer.php-80}
         events:
             # Read more at https://www.serverless.com/framework/docs/providers/aws/events/event-bridge/
             -   eventBridge:

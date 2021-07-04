@@ -63,7 +63,7 @@ should not require any change for dispatching messages.
 You can create the Queue yourself in the Console, write custom Cloudformation 
 or use [Lift's Queue construct](https://github.com/getlift/lift/blob/master/docs/queue.md) that will handle that for you. 
 
-Here is a simple example with Lift, check out the [full documentation](https://github.com/getlift/lift/blob/master/docs/queue.md) for more details.
+Here is a simple example with Lift, make sure to [install the plugin first](https://github.com/getlift/lift#installation) and check out the [full documentation](https://github.com/getlift/lift/blob/master/docs/queue.md) for more details. 
 
 ```yaml
 # serverless.yml

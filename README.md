@@ -46,8 +46,7 @@ framework:
 
 ### SQS
 
-The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, set its URL in the 
-envrionment variable `MESSENGER_TRANSPORT_DSN`:
+The [SQS](https://aws.amazon.com/sqs/) service is a queue that works similar to RabbitMQ. To use it, set its URL in the environment variable `MESSENGER_TRANSPORT_DSN`:
 
 ```dotenv
 MESSENGER_TRANSPORT_DSN=https://sqs.us-east-1.amazonaws.com/123456789/my-queue
@@ -114,7 +113,7 @@ If you use Lift, this is done automatically for you.
 
 #### Consume messages from SQS
 
-1.If you don't use Lift, create the function that will be invoked by SQS in `serverless.yml`:
+1. **If you don't use Lift**, create the function that will be invoked by SQS in `serverless.yml`:
 
 ```yaml
 functions:

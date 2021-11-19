@@ -9,6 +9,7 @@ use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransport;
 use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
+use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage2;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
@@ -27,6 +28,9 @@ class EventBridgeTransportTest extends BaseFunctionalTest
 
         $this->assertTrue($factory->supports('eventbridge://', []));
         $this->assertTrue($factory->supports('eventbridge://myapp.mycomponent', []));
+        $this->assertTrue($factory->supports('eventbridge://myapp/mycomponent', []));
+        $this->assertTrue($factory->supports('eventbridge://myapp/mycomponent?event_bus_name=custom', []));
+        $this->assertTrue($factory->supports('eventbridge://myapp/mycomponent?event_bus_name=arn:aws:events:us-east-1:123456780912:event-bus/custom-bus', []));
         $this->assertFalse($factory->supports('sns://arn:aws:sns:us-east-1:1234567890:test', []));
         $this->assertFalse($factory->supports('https://example.com', []));
         $this->assertFalse($factory->supports('arn:aws:sns:us-east-1:1234567890:test', []));
@@ -37,11 +41,11 @@ class EventBridgeTransportTest extends BaseFunctionalTest
 
     public function test send message(): void
     {
-        $sns = $this->getMockBuilder(EventBridgeClient::class)
+        $eventBridgeClient = $this->getMockBuilder(EventBridgeClient::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['putEvents'])
             ->getMock();
-        $sns->expects($this->once())
+        $eventBridgeClient->expects($this->once())
             ->method('putEvents')
             ->with($this->callback(function ($input) {
                 $entry = $input['Entries'][0];
@@ -51,10 +55,34 @@ class EventBridgeTransportTest extends BaseFunctionalTest
                 return true;
             }))
             ->willReturn(ResultMockFactory::create(PutEventsResponse::class, ['FailedEntryCount' => 0]));
-        $this->container->set('bref.messenger.eventbridge_client', $sns);
+        $this->container->set('bref.messenger.eventbridge_client', $eventBridgeClient);
 
         /** @var MessageBusInterface $bus */
         $bus = $this->container->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage('hello'));
+    }
+
+    public function test send message with event bus name(): void
+    {
+        $eventBridgeClient = $this->getMockBuilder(EventBridgeClient::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['putEvents'])
+            ->getMock();
+        $eventBridgeClient->expects($this->once())
+            ->method('putEvents')
+            ->with($this->callback(function ($input) {
+                $entry = $input['Entries'][0];
+                $this->assertEquals('myapp.mycomponent', $entry['Source']);
+                $this->assertEquals('Symfony Messenger message', $entry['DetailType']);
+                $this->assertEquals('custom', $entry['EventBridgeName']);
+
+                return true;
+            }))
+            ->willReturn(ResultMockFactory::create(PutEventsResponse::class, ['FailedEntryCount' => 0]));
+        $this->container->set('bref.messenger.eventbridge_client', $eventBridgeClient);
+
+        /** @var MessageBusInterface $bus */
+        $bus = $this->container->get(MessageBusInterface::class);
+        $bus->dispatch(new TestMessage2('hello'));
     }
 }

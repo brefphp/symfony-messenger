@@ -74,7 +74,7 @@ class EventBridgeTransportTest extends BaseFunctionalTest
                 $entry = $input['Entries'][0];
                 $this->assertEquals('myapp.mycomponent', $entry['Source']);
                 $this->assertEquals('Symfony Messenger message', $entry['DetailType']);
-                $this->assertEquals('custom', $entry['EventBridgeName']);
+                $this->assertEquals('custom', $entry['EventBusName']);
 
                 return true;
             }))

@@ -15,13 +15,13 @@
         }
     },
     "require": {
-        "php": "^7.3",
+        "php": "^7.3 || ^8.0",
         "ext-json": "*",
-        "symfony/messenger": "^4.3 || ^5.0",
-        "symfony/config": "^4.3 || ^5.0",
-        "symfony/dependency-injection": "^4.3 || ^5.0",
-        "symfony/http-kernel": "^4.3 || ^5.0",
-        "symfony/yaml": "^4.3 || ^5.0",
+        "symfony/messenger": "^4.3 || ^5.0 || ^6.0",
+        "symfony/config": "^4.3 || ^5.0 || ^6.0",
+        "symfony/dependency-injection": "^4.3 || ^5.0 || ^6.0",
+        "symfony/http-kernel": "^4.3 || ^5.0 || ^6.0",
+        "symfony/yaml": "^4.3 || ^5.0 || ^6.0",
         "bref/bref": "^0.5.18 || ^1.0",
         "async-aws/sns": "^1.0",
         "async-aws/sqs": "^1.2",
@@ -29,7 +29,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5",
-        "mnapoli/hard-mode": "^0.2.0",
+        "mnapoli/hard-mode": "^0.3.0",
         "phpstan/phpstan": "^0.12.0",
         "symfony/framework-bundle": "^4.3 || ^5.0",
         "nyholm/symfony-bundle-test": "^1.6",

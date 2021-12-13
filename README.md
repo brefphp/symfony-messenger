@@ -289,6 +289,11 @@ AWS [EventBridge](https://aws.amazon.com/eventbridge/) is a message routing serv
 # This source name will be reused in `serverless.yml` later.
 MESSENGER_TRANSPORT_DSN=eventbridge://myapp
 ```
+Optionally you can add set the [EventBusName](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutEventsRequestEntry.html#eventbridge-Type-PutEventsRequestEntry-EventBusName) via a `event_bus_name` query parameter, either the name or the ARN:
+```dotenv
+MESSENGER_TRANSPORT_DSN=eventbridge://myapp?event_bus_name=custom-bus
+MESSENGER_TRANSPORT_DSN=eventbridge://myapp?event_bus_name=arn:aws:events:us-east-1:123456780912:event-bus/custom-bus
+```
 
 That's it, messages will be dispatched to EventBridge.
 

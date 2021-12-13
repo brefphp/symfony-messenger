@@ -2,8 +2,10 @@ framework:
     messenger:
         transports:
             foo: 'eventbridge://myapp.mycomponent'
+            with_bus_name: 'eventbridge://myapp.mycomponent?event_bus_name=custom'
         routing:
             'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage': foo
+            'Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage2': with_bus_name
 
 services:
     bref.messenger.eventbridge_client:

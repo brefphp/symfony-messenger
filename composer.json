@@ -22,7 +22,7 @@
         "symfony/dependency-injection": "^4.3 || ^5.0 || ^6.0",
         "symfony/http-kernel": "^4.3 || ^5.0 || ^6.0",
         "symfony/yaml": "^4.3 || ^5.0 || ^6.0",
-        "bref/bref": "^0.5.18 || ^1.0",
+        "bref/bref": "^1.5",
         "async-aws/sns": "^1.0",
         "async-aws/sqs": "^1.2",
         "async-aws/event-bridge": "^1.0",

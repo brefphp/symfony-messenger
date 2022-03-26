@@ -177,6 +177,9 @@ services:
         arguments:
             # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
+            # true enables partial SQS batch failure, see https://bref.sh/docs/function/handlers.html#partial-batch-response for more details.
+            # Enabling this without proper SQS config will consider all your messages successful
+            $partialBatchFailure: false
 ```
 
 Now, anytime a message is dispatched to SQS, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.

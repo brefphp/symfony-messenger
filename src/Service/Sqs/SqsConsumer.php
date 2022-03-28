@@ -7,6 +7,7 @@ use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsXrayTraceHeaderStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -41,7 +42,7 @@ final class SqsConsumer extends SqsHandler
         $this->bus = $bus;
         $this->serializer = $serializer;
         $this->transportName = $transportName;
-        $this->logger = $logger;
+        $this->logger = $logger ?? new NullLogger();
         $this->partialBatchFailure = $partialBatchFailure;
     }
 
@@ -77,10 +78,7 @@ final class SqsConsumer extends SqsHandler
                     throw $exception;
                 }
 
-                if ($this->logger !== null) {
-                    $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. %s', $record->getMessageId(), $exception->getMessage()));
-                }
-
+                $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. %s', $record->getMessageId(), $exception->getMessage()));
                 $this->markAsFailed($record);
             }
         }

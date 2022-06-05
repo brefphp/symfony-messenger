@@ -177,8 +177,9 @@ services:
         arguments:
             # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
-            # true enables partial SQS batch failure, see https://bref.sh/docs/function/handlers.html#partial-batch-response for more details.
+            # true enables partial SQS batch failure
             # Enabling this without proper SQS config will consider all your messages successful
+            # See https://bref.sh/docs/function/handlers.html#partial-batch-response for more details.
             $partialBatchFailure: false
 ```
 

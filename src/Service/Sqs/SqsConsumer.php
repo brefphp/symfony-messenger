@@ -78,7 +78,8 @@ final class SqsConsumer extends SqsHandler
                     throw $exception;
                 }
 
-                $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. %s', $record->getMessageId(), $exception->getMessage()));
+                $this->logger->error(sprintf('SQS record with id "%s" failed to be processed.', $record->getMessageId()));
+                $this->logger->error($exception->getMessage());
                 $this->markAsFailed($record);
             }
         }

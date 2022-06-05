@@ -25,7 +25,7 @@ final class EventBridgeTransport implements TransportInterface
     public function __construct(EventBridgeClient $eventBridge, SerializerInterface $serializer, string $source, ?string $eventBusName = null)
     {
         $this->eventBridge = $eventBridge;
-        $this->serializer = $serializer ?? new PhpSerializer;
+        $this->serializer = $serializer;
         $this->source = $source;
         $this->eventBusName = $eventBusName;
     }

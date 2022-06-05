@@ -24,7 +24,7 @@ final class SnsTransport implements TransportInterface
     public function __construct(SnsClient $sns, SerializerInterface $serializer, string $topic)
     {
         $this->sns = $sns;
-        $this->serializer = $serializer ?? new PhpSerializer;
+        $this->serializer = $serializer;
         $this->topic = $topic;
     }
 

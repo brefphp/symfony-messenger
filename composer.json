@@ -35,5 +35,10 @@
         "symfony/framework-bundle": "^4.3 || ^5.0 || ^6.0",
         "nyholm/symfony-bundle-test": "1.x-dev",
         "matthiasnoback/symfony-dependency-injection-test": "^4.1"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

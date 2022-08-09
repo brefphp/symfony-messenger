@@ -7,6 +7,7 @@ use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsXrayTraceHeaderStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
@@ -45,7 +46,6 @@ final class SqsConsumer extends SqsHandler
                 $headers = json_decode($attributes[self::MESSAGE_ATTRIBUTE_NAME]['stringValue'], true);
                 unset($attributes[self::MESSAGE_ATTRIBUTE_NAME]);
             }
-
             foreach ($attributes as $name => $attribute) {
                 if ($attribute['dataType'] !== 'String') {
                     continue;
@@ -55,7 +55,12 @@ final class SqsConsumer extends SqsHandler
 
             $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
 
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(new AmazonSqsReceivedStamp($record->getMessageId())), $this->transportName);
+            $stamps = [new AmazonSqsReceivedStamp($record->getMessageId())];
+
+            if ('' !== $context->getTraceId()) {
+                $stamps[] = new AmazonSqsXrayTraceHeaderStamp($context->getTraceId());
+            }
+            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName);
         }
     }
 }

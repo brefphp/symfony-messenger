@@ -15,7 +15,7 @@
         }
     },
     "require": {
-        "php": ">=7.3",
+        "php": ">=7.4",
         "ext-json": "*",
         "symfony/messenger": "^4.3 || ^5.0 || ^6.0",
         "symfony/config": "^4.3 || ^5.0 || ^6.0",

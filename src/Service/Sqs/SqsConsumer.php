@@ -48,7 +48,22 @@ final class SqsConsumer extends SqsHandler
 
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        $isFifoQueue = null;
+        $hasPreviousMessageFailed = false;
+
         foreach ($event->getRecords() as $record) {
+            if ($isFifoQueue === null) {
+                $isFifoQueue = \str_ends_with($record->toArray()['eventSourceARN'], '.fifo');
+            }
+
+            /*
+             * When using FIFO queues, preserving order is important.
+             * If a previous message has failed in the batch, we need to skip the next ones and requeue them.
+             */
+            if ($isFifoQueue && $hasPreviousMessageFailed) {
+                $this->markAsFailed($record);
+            }
+
             $headers = [];
             $attributes = $record->getMessageAttributes();
 
@@ -81,6 +96,7 @@ final class SqsConsumer extends SqsHandler
                 $this->logger->error(sprintf('SQS record with id "%s" failed to be processed.', $record->getMessageId()));
                 $this->logger->error($exception->getMessage());
                 $this->markAsFailed($record);
+                $hasPreviousMessageFailed = true;
             }
         }
     }

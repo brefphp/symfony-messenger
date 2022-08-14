@@ -63,6 +63,7 @@ class SqsConsumerTest extends TestCase
                     ],
                     'eventSource'=>'aws:sqs',
                     'messageId' => $messageId,
+                    'eventSourceARN' => 'arn:aws:sqs:us-east-1:123456789012:queue1'
                 ],
             ],
         ]);
@@ -120,6 +121,7 @@ class SqsConsumerTest extends TestCase
                     ],
                     'eventSource'=>'aws:sqs',
                     'messageId' => $messageId,
+                    'eventSourceARN' => 'arn:aws:sqs:us-east-1:123456789012:queue1'
                 ],
             ],
         ]);

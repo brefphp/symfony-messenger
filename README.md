@@ -208,7 +208,13 @@ resources:
 ```
 
 [Symfony Amazon SQS Messenger](https://symfony.com/doc/current/messenger.html#amazon-sqs)  will automatically calculate/set 
-the `MessageGroupId` and `MessageDeduplicationId` parameters required for FIFO queues, but you can set them explicitly:
+the `MessageGroupId` and `MessageDeduplicationId` parameters required for FIFO queues, but you can set them explicitly if you implement interfaces:
+
+[AWS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessage.html) have limitations :
+* Max length of the messageDeduplicationId is 128 characters.
+* Can contain only alphanumeric characters and punctuation.
+
+##### Method 1 : Set explicitly
 
 ```php
 use Symfony\Component\Messenger\MessageBus;
@@ -216,6 +222,42 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsFifoStamp;
 
 /* @var MessageBus $messageBus */
 $messageBus->dispatch(new MyAsyncMessage(), [new AmazonSqsFifoStamp('my-group-message-id', 'my-deduplication-id')]);
+```
+
+##### Method 2 : Use interfaces and middleware
+###### Step 1: Implements the interfaces on your message class
+You can implement the interfaces on your message class to automatically set the `MessageGroupId` and `MessageDeduplicationId` parameters.
+These interfaces are independent each other.
+
+```php
+use Bref\Symfony\Messenger\Event\Sqs\WithMessageGroupId;
+use Bref\Symfony\Messenger\Event\Sqs\WithMessageDeduplicationId;
+
+class MyAsyncMessage implements WithMessageGroupId, WithMessageDeduplicationId
+{
+      public function messageGroupId(): string
+      {
+        // Implement the interface
+      }
+      
+      public function messageDeduplicationId(): string
+      {
+        // Implement the interface
+      }
+
+}
+```
+
+###### Step 2: Use the middleware
+
+```yaml
+# messenger.yaml
+framework:
+  messenger:
+    buses:
+      your_bus:
+        middleware: 
+          - 'Bref\Symfony\Messenger\Service\Sqs\Middleware\AddFifoStampToEnveloppe'
 ```
 Everything else is identical to the normal SQS queue.
 

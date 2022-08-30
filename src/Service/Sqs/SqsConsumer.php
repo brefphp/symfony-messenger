@@ -6,6 +6,8 @@ use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Symfony\Messenger\Service\BusDriver;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsXrayTraceHeaderStamp;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -23,22 +25,45 @@ final class SqsConsumer extends SqsHandler
     private $transportName;
     /** @var BusDriver */
     private $busDriver;
+    /** @var bool */
+    private $partialBatchFailure;
+    /** @var LoggerInterface|null */
+    private $logger;
 
     public function __construct(
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        string $transportName
+        string $transportName,
+        LoggerInterface $logger = null,
+        bool $partialBatchFailure = false
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;
         $this->serializer = $serializer;
         $this->transportName = $transportName;
+        $this->logger = $logger ?? new NullLogger();
+        $this->partialBatchFailure = $partialBatchFailure;
     }
 
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        $isFifoQueue = null;
+        $hasPreviousMessageFailed = false;
+
         foreach ($event->getRecords() as $record) {
+            if ($isFifoQueue === null) {
+                $isFifoQueue = \str_ends_with($record->toArray()['eventSourceARN'], '.fifo');
+            }
+
+            /*
+             * When using FIFO queues, preserving order is important.
+             * If a previous message has failed in the batch, we need to skip the next ones and requeue them.
+             */
+            if ($isFifoQueue && $hasPreviousMessageFailed) {
+                $this->markAsFailed($record);
+            }
+
             $headers = [];
             $attributes = $record->getMessageAttributes();
 
@@ -46,6 +71,7 @@ final class SqsConsumer extends SqsHandler
                 $headers = json_decode($attributes[self::MESSAGE_ATTRIBUTE_NAME]['stringValue'], true);
                 unset($attributes[self::MESSAGE_ATTRIBUTE_NAME]);
             }
+
             foreach ($attributes as $name => $attribute) {
                 if ($attribute['dataType'] !== 'String') {
                     continue;
@@ -53,14 +79,25 @@ final class SqsConsumer extends SqsHandler
                 $headers[$name] = $attribute['stringValue'];
             }
 
-            $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
+            try {
+                $envelope = $this->serializer->decode(['body' => $record->getBody(), 'headers' => $headers]);
 
-            $stamps = [new AmazonSqsReceivedStamp($record->getMessageId())];
+                $stamps = [new AmazonSqsReceivedStamp($record->getMessageId())];
 
-            if ('' !== $context->getTraceId()) {
-                $stamps[] = new AmazonSqsXrayTraceHeaderStamp($context->getTraceId());
+                if ('' !== $context->getTraceId()) {
+                    $stamps[] = new AmazonSqsXrayTraceHeaderStamp($context->getTraceId());
+                }
+                $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName);
+            } catch (\Throwable $exception) {
+                if ($this->partialBatchFailure === false) {
+                    throw $exception;
+                }
+
+                $this->logger->error(sprintf('SQS record with id "%s" failed to be processed.', $record->getMessageId()));
+                $this->logger->error($exception->getMessage());
+                $this->markAsFailed($record);
+                $hasPreviousMessageFailed = true;
             }
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName);
         }
     }
 }

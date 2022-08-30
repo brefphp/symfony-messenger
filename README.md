@@ -147,7 +147,7 @@ $kernel->boot();
 return $kernel->getContainer()->get(SqsConsumer::class);
 ```
 
-If you are using Symfony 5.1, use this instead:
+If you are using Symfony 5.1 or later, use this instead:
 
 ```php
 <?php declare(strict_types=1);

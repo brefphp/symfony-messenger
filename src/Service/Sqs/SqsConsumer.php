@@ -62,6 +62,7 @@ final class SqsConsumer extends SqsHandler
              */
             if ($isFifoQueue && $hasPreviousMessageFailed) {
                 $this->markAsFailed($record);
+                continue;
             }
 
             $headers = [];

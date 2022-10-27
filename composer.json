@@ -35,7 +35,9 @@
         "phpstan/phpstan": "^1.7.10",
         "symfony/framework-bundle": "^4.3 || ^5.0 || ^6.0",
         "nyholm/symfony-bundle-test": "1.x-dev",
-        "matthiasnoback/symfony-dependency-injection-test": "^4.1"
+        "matthiasnoback/symfony-dependency-injection-test": "^4.1",
+        "phpspec/prophecy": "^1.15",
+        "phpspec/prophecy-phpunit": "^2.0"
     },
     "config": {
         "allow-plugins": {

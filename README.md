@@ -269,6 +269,25 @@ $kernel->boot();
 return $kernel->getContainer()->get(SnsConsumer::class);
 ```
 
+If you are using Symfony 5.1 or later, use this instead:
+
+```php
+<?php declare(strict_types=1);
+
+use Bref\Symfony\Messenger\Service\Sns\SnsConsumer;
+use Symfony\Component\Dotenv\Dotenv;
+
+require dirname(__DIR__).'/vendor/autoload.php';
+
+(new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return the Bref consumer service
+return $kernel->getContainer()->get(SnsConsumer::class);
+```
+
 3. Register and configure the `SnsConsumer` service:
 
 ```yaml
@@ -318,6 +337,8 @@ functions:
         events:
             # Read more at https://www.serverless.com/framework/docs/providers/aws/events/event-bridge/
             -   eventBridge:
+                    # In case of you change bus name in config/packages/messenger.yaml (i.e eventbridge://myapp?event_bus_name=custom-bus) you need to set bus name like below
+                    # eventBus: custom-bus
                     # This filters events we listen to: only events from the "myapp" source.
                     # This should be the same source defined in config/packages/messenger.yaml
                     pattern:
@@ -341,6 +362,25 @@ $kernel->boot();
 return $kernel->getContainer()->get(EventBridgeConsumer::class);
 ```
 
+If you are using Symfony 5.1 or later, use this instead:
+
+```php
+<?php declare(strict_types=1);
+
+use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer;
+use Symfony\Component\Dotenv\Dotenv;
+
+require dirname(__DIR__).'/vendor/autoload.php';
+
+(new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
+
+$kernel = new \App\Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$kernel->boot();
+
+// Return the Bref consumer service
+return $kernel->getContainer()->get(EventBridgeConsumer::class);
+```
+
 3. Register and configure the `EventBridgeConsumer` service:
 
 ```yaml
@@ -352,6 +392,8 @@ services:
         arguments:
             # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
+            # Optionnally, if you have different buses in config/packages/messenger.yaml, set $bus like below:
+            # $bus: '@event.bus'
 ```
 
 Now, anytime a message is dispatched to EventBridge for that source, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.

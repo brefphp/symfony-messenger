@@ -14,9 +14,11 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsXrayTraceHeaderStamp;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\Transport\Serialization\Serializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
+use Throwable;
 
 class SqsConsumerTest extends TestCase
 {
@@ -194,6 +196,40 @@ class SqsConsumerTest extends TestCase
         $this->assertEmpty($failures);
     }
 
+    public function test_unrecoverable_exception_during_batch()
+    {
+        $transport = 'async';
+        $sqsRecords = [
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test'),
+                'e00c848c-2579-4f6a-a006-ccdc2808ed64',
+                'Test message 1',
+                $transport,
+                true,
+            ),
+            $this->sqsRecordWillFailDuringHandle(
+                new TestMessage('test2'),
+                '6c4b71a8-eb2e-4373-9d07-478982ff0905',
+                'Test message 2',
+                $transport,
+                true,
+                new UnrecoverableMessageHandlingException('no retry')
+            ),
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test3'),
+                'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f',
+                'Test message 3',
+                $transport,
+                true,
+            ),
+        ];
+
+        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+
+        $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
+        $this->assertEmpty($failures);
+    }
+
     private function sqsRecordWillSuccessfullyBeHandled(object $message, string $messageId, string $body, string $transport, bool $fifo = false): array
     {
         return $this->sqsRecordWillSuccessfullyBeHandledWithStamps(
@@ -246,7 +282,7 @@ class SqsConsumerTest extends TestCase
         return $this->aSqsRecord($messageId, $body, $specialHeaders, $fifo);
     }
 
-    private function sqsRecordWillFailDuringHandle(object $message, string $messageId, string $body, string $transport, bool $fifo = false): array
+    private function sqsRecordWillFailDuringHandle(object $message, string $messageId, string $body, string $transport, bool $fifo = false, ?Throwable $failure = null): array
     {
         $specialHeaders = ['Special\Header\Name' => 'some data'];
         $headers = array_merge($specialHeaders, [
@@ -265,7 +301,7 @@ class SqsConsumerTest extends TestCase
                 ),
                 $transport
             )
-            ->willThrow(new \Exception('boom'))
+            ->willThrow($failure ?? new \Exception('boom'))
         ;
 
         return $this->aSqsRecord($messageId, $body, $specialHeaders, $fifo);

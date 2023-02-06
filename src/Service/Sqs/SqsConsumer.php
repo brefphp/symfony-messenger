@@ -10,6 +10,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsXrayTraceHeaderStamp;
+use Symfony\Component\Messenger\Exception\UnrecoverableExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
@@ -89,6 +90,9 @@ final class SqsConsumer extends SqsHandler
                     $stamps[] = new AmazonSqsXrayTraceHeaderStamp($context->getTraceId());
                 }
                 $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName);
+            } catch (UnrecoverableExceptionInterface $exception) {
+                $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. But failure was marked as unrecoverable. Message will be acknowledged.', $record->getMessageId()));
+                $this->logger->error($exception->getMessage());
             } catch (\Throwable $exception) {
                 if ($this->partialBatchFailure === false) {
                     throw $exception;

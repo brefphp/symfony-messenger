@@ -5,12 +5,15 @@ namespace Bref\Symfony\Messenger\Test\Functional\Service\Sns;
 use AsyncAws\Core\Test\ResultMockFactory;
 use AsyncAws\Sns\Result\PublishResponse;
 use AsyncAws\Sns\SnsClient;
+use Bref\Symfony\Messenger\Service\Sns\SnsFifoStamp;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransport;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
+use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 class SnsTransportTest extends BaseFunctionalTest
 {
@@ -52,5 +55,68 @@ class SnsTransportTest extends BaseFunctionalTest
         /** @var MessageBusInterface $bus */
         $bus = $this->container->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage('hello'));
+    }
+
+    public function testRejectsMessageWhenQueueIsFifoWithoutStamp()
+    {
+        $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
+        $serializer = $this->container->get(SerializerInterface::class);
+        $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
+        $msg = new TestMessage("hello");
+        $envelope = new Envelope($msg);
+        $this->expectExceptionMessage("SnsFifoStamp required for fifo topic");
+        $snsTransport->send($envelope);
+    }
+    public function testAcceptsMessageWhenQueueIsFifoWithStamp(){
+        $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
+        $snsClient->expects($this->once())->method("publish")->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
+        $serializer = $this->container->get(SerializerInterface::class);
+        $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
+        $msg = new TestMessage("hello");
+        $envelope = new Envelope($msg, [new SnsFifoStamp("123","456")]);
+        $resp = $snsTransport->send($envelope);
+        $this->assertInstanceOf(Envelope::class, $resp);
+    }
+    public function testAttachingSnsFifoStampToMessageAppliesMessageGroupId(){
+        $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
+        $snsClient->expects($this->once())->method("publish")
+            ->with($this->callback(function($params){
+                $this->assertEquals("123", $params["MessageGroupId"]);
+                return true;
+            }))
+            ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
+        $serializer = $this->container->get(SerializerInterface::class);
+        $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
+        $msg = new TestMessage("hello");
+        $envelope = new Envelope($msg, [new SnsFifoStamp("123","456")]);
+        $resp = $snsTransport->send($envelope);
+        $this->assertInstanceOf(Envelope::class, $resp);
+    }
+    public function testAttachingSnsFifoStampToMessageAppliesMessageDeDeuplicatId(){
+        $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
+        $snsClient->expects($this->once())->method("publish")
+            ->with($this->callback(function($params){
+                $this->assertEquals("456", $params["MessageDeduplicationId"]);
+                return true;
+            }))
+            ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
+        $serializer = $this->container->get(SerializerInterface::class);
+        $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
+        $msg = new TestMessage("hello");
+        $envelope = new Envelope($msg, [new SnsFifoStamp("123","456")]);
+        $resp = $snsTransport->send($envelope);
+        $this->assertInstanceOf(Envelope::class, $resp);
+    }
+    public function testAttachingSnsFifoStampToMessageAllowsNullMessageGroupId(){
+        //  in fifo queues message group id can be null when the de-dupe scope is the entire queue.
+        $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
+        $snsClient->expects($this->once())->method("publish")
+            ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
+        $serializer = $this->container->get(SerializerInterface::class);
+        $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
+        $msg = new TestMessage("hello");
+        $envelope = new Envelope($msg, [new SnsFifoStamp(null,"456")]);
+        $resp = $snsTransport->send($envelope);
+        $this->assertInstanceOf(Envelope::class, $resp);
     }
 }

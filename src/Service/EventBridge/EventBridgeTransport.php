@@ -65,7 +65,7 @@ final class EventBridgeTransport implements TransportInterface
         if ($failedCount > 0) {
             foreach ($result->getEntries() as $entry) {
                 $reason = $entry->getErrorMessage() ?? 'no reason provided';
-                throw new TransportException(Symfony Messenger message);
+                throw new TransportException("$failedCount message(s) could not be published to EventBridge: $reason.");
             }
         }
 

@@ -398,6 +398,17 @@ services:
 
 Now, anytime a message is dispatched to EventBridge for that source, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.
 
+EventBridge event dispatching:
+    
+By default `DetailType` is `Symfony Messenger message` but you can change it by:
+```yaml
+# config/services.yaml
+services:
+    bref.messenger.eventbridge_detail_type_resolver:
+        class: Bref\Symfony\Messenger\Service\EventBridge\DefaultEventBridgeDetailTypeResolver
+```
+You can use `DefaultEventBridgeDetailTypeResolver` which is provided by this package (it will use message class name as DetailType) or create your own resolver by implementing `Bref\Symfony\Messenger\Service\EventBridge\EventBridgeDetailTypeResolverInterface`.
+
 ## Error handling
 
 AWS Lambda has error handling mechanisms (retrying and handling failed messages). Because of that, this package does not integrates Symfony Messenger's retry mechanism. Instead, it works with Lambda's retry mechanism.

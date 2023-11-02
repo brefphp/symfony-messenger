@@ -13,9 +13,12 @@ final class EventBridgeTransportFactory implements TransportFactoryInterface
     /** @var EventBridgeClient */
     private $eventBridge;
 
-    public function __construct(EventBridgeClient $eventBridge)
+    private ?EventBridgeDetailTypeResolver $detailTypeResolver;
+
+    public function __construct(EventBridgeClient $eventBridge, ?EventBridgeDetailTypeResolver $detailTypeResolver = null)
     {
         $this->eventBridge = $eventBridge;
+        $this->detailTypeResolver = $detailTypeResolver;
     }
 
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
@@ -29,7 +32,13 @@ final class EventBridgeTransportFactory implements TransportFactoryInterface
             parse_str($parsedUrl['query'], $query);
         }
 
-        return new EventBridgeTransport($this->eventBridge, $serializer, $parsedUrl['host'], $query['event_bus_name'] ?? null);
+        return new EventBridgeTransport(
+            $this->eventBridge,
+            $serializer,
+            $parsedUrl['host'],
+            $query['event_bus_name'] ?? null,
+            $this->detailTypeResolver
+        );
     }
 
     public function supports(string $dsn, array $options): bool

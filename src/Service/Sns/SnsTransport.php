@@ -39,7 +39,21 @@ final class SnsTransport implements TransportInterface
             'Message' => $encodedMessage['body'],
             'TopicArn' => $this->topic,
         ];
-
+        if (str_contains($this->topic, ".fifo")) {
+            $stamps = $envelope->all();
+            $dedupeStamp = $stamps[SnsFifoStamp::class][0] ?? false;
+            if (!$dedupeStamp) {
+                throw new Exception("SnsFifoStamp required for fifo topic");
+            }
+            $messageGroupId = $dedupeStamp->getMessageGroupId() ?? false;
+            $messageDeDuplicationId = $dedupeStamp->getMessageDeduplicationId() ?? false;
+            if ($messageDeDuplicationId) {
+                $arguments['MessageDeduplicationId'] = $messageDeDuplicationId;
+            }
+            if ($messageGroupId) {
+                $arguments['MessageGroupId'] = $messageGroupId;
+            }
+        }
         try {
             $result = $this->sns->publish($arguments);
             $messageId = $result->getMessageId();

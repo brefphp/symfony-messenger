@@ -10,20 +10,27 @@ use Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage2;
+use Nyholm\BundleTest\TestKernel;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
 class EventBridgeTransportTest extends BaseFunctionalTest
 {
-    protected function getDefaultConfig(): array
+    protected function setUp(): void
     {
-        return ['eventbridge.yaml'];
+        parent::setUp();
+
+        self::bootKernel([
+            'config' => static function (TestKernel $kernel) {
+                $kernel->addTestConfig(dirname(__DIR__, 3).'/Resources/config/eventbridge.yaml');
+            },
+        ]);
     }
 
     public function test factory(): void
     {
         /** @var EventBridgeTransportFactory $factory */
-        $factory = $this->container->get(EventBridgeTransportFactory::class);
+        $factory = self::getContainer()->get(EventBridgeTransportFactory::class);
         $this->assertInstanceOf(EventBridgeTransportFactory::class, $factory);
 
         $this->assertTrue($factory->supports('eventbridge://', []));
@@ -55,10 +62,10 @@ class EventBridgeTransportTest extends BaseFunctionalTest
                 return true;
             }))
             ->willReturn(ResultMockFactory::create(PutEventsResponse::class, ['FailedEntryCount' => 0]));
-        $this->container->set('bref.messenger.eventbridge_client', $eventBridgeClient);
+        self::getContainer()->set('bref.messenger.eventbridge_client', $eventBridgeClient);
 
         /** @var MessageBusInterface $bus */
-        $bus = $this->container->get(MessageBusInterface::class);
+        $bus = self::getContainer()->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage('hello'));
     }
 
@@ -79,10 +86,10 @@ class EventBridgeTransportTest extends BaseFunctionalTest
                 return true;
             }))
             ->willReturn(ResultMockFactory::create(PutEventsResponse::class, ['FailedEntryCount' => 0]));
-        $this->container->set('bref.messenger.eventbridge_client', $eventBridgeClient);
+        self::getContainer()->set('bref.messenger.eventbridge_client', $eventBridgeClient);
 
         /** @var MessageBusInterface $bus */
-        $bus = $this->container->get(MessageBusInterface::class);
+        $bus = self::getContainer()->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage2('hello'));
     }
 }

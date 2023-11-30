@@ -10,6 +10,7 @@ use Bref\Symfony\Messenger\Service\Sns\SnsTransport;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory;
 use Bref\Symfony\Messenger\Test\Functional\BaseFunctionalTest;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
+use Nyholm\BundleTest\TestKernel;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
@@ -17,15 +18,21 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 class SnsTransportTest extends BaseFunctionalTest
 {
-    protected function getDefaultConfig(): array
+    protected function setUp(): void
     {
-        return ['sns.yaml'];
+        parent::setUp();
+
+        self::bootKernel([
+            'config' => static function (TestKernel $kernel) {
+                $kernel->addTestConfig(dirname(__DIR__, 3).'/Resources/config/sns.yaml');
+            },
+        ]);
     }
 
     public function test factory(): void
     {
         /** @var SnsTransportFactory $factory */
-        $factory = $this->container->get(SnsTransportFactory::class);
+        $factory = self::getContainer()->get(SnsTransportFactory::class);
         $this->assertInstanceOf(SnsTransportFactory::class, $factory);
 
         $this->assertTrue($factory->supports('sns://arn:aws:sns:us-east-1:1234567890:test', []));
@@ -50,17 +57,17 @@ class SnsTransportTest extends BaseFunctionalTest
                 return true;
             }))
             ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
-        $this->container->set('bref.messenger.sns_client', $sns);
+        self::getContainer()->set('bref.messenger.sns_client', $sns);
 
         /** @var MessageBusInterface $bus */
-        $bus = $this->container->get(MessageBusInterface::class);
+        $bus = self::getContainer()->get(MessageBusInterface::class);
         $bus->dispatch(new TestMessage('hello'));
     }
 
     public function testRejectsMessageWhenQueueIsFifoWithoutStamp()
     {
         $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
-        $serializer = $this->container->get(SerializerInterface::class);
+        $serializer = self::getContainer()->get(SerializerInterface::class);
         $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
         $msg = new TestMessage("hello");
         $envelope = new Envelope($msg);
@@ -70,7 +77,7 @@ class SnsTransportTest extends BaseFunctionalTest
     public function testAcceptsMessageWhenQueueIsFifoWithStamp(){
         $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
         $snsClient->expects($this->once())->method("publish")->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
-        $serializer = $this->container->get(SerializerInterface::class);
+        $serializer = self::getContainer()->get(SerializerInterface::class);
         $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
         $msg = new TestMessage("hello");
         $envelope = new Envelope($msg, [new SnsFifoStamp("123","456")]);
@@ -85,7 +92,7 @@ class SnsTransportTest extends BaseFunctionalTest
                 return true;
             }))
             ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
-        $serializer = $this->container->get(SerializerInterface::class);
+        $serializer = self::getContainer()->get(SerializerInterface::class);
         $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
         $msg = new TestMessage("hello");
         $envelope = new Envelope($msg, [new SnsFifoStamp("123","456")]);
@@ -100,7 +107,7 @@ class SnsTransportTest extends BaseFunctionalTest
                 return true;
             }))
             ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
-        $serializer = $this->container->get(SerializerInterface::class);
+        $serializer = self::getContainer()->get(SerializerInterface::class);
         $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
         $msg = new TestMessage("hello");
         $envelope = new Envelope($msg, [new SnsFifoStamp("123","456")]);
@@ -112,7 +119,7 @@ class SnsTransportTest extends BaseFunctionalTest
         $snsClient = $this->getMockBuilder(SnsClient::class)->disableOriginalConstructor()->getMock();
         $snsClient->expects($this->once())->method("publish")
             ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
-        $serializer = $this->container->get(SerializerInterface::class);
+        $serializer = self::getContainer()->get(SerializerInterface::class);
         $snsTransport = new SnsTransport($snsClient, $serializer, "arn:aws:sns:us-east-1:1234567890:test.fifo'"); // fifo suffix designates fifo queue
         $msg = new TestMessage("hello");
         $envelope = new Envelope($msg, [new SnsFifoStamp(null,"456")]);

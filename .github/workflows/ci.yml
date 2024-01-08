@@ -8,25 +8,34 @@ on:
 
 jobs:
   php-tests:
-    name: Tests - PHP ${{ matrix.php }} ${{ matrix.dependency-version }}
+    name: Tests - PHP ${{ matrix.php }} with Symfony ${{ matrix.sf_version }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
+      max-parallel: 10
+      fail-fast: false
       matrix:
-        php: ['8.2', '8.1', '8.0', '7.4']
-        dependency-version: ['']
+        php: ['8.2', '8.3']
+        sf_version: ['7.0.*']
+        include:
+            - php: '8.0'
+              sf_version: '5.4.*'
+            - php: '8.1'
+              sf_version: '6.4.*'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          tools: composer:v2
+          tools: composer:v2, flex
           coverage: none
           ini-values: expose_php=1
       - name: Install dependencies
-        run: 'composer update ${{ matrix.dependency-version }} --no-interaction --prefer-dist --no-progress'
+        run: 'composer update --no-interaction --prefer-dist --no-progress'
+        env:
+          SYMFONY_REQUIRE: ${{ matrix.sf_version }}
       - name: Execute Unit Tests
         run: 'vendor/bin/phpunit'

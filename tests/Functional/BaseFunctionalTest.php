@@ -3,36 +3,26 @@
 namespace Bref\Symfony\Messenger\Test\Functional;
 
 use Bref\Symfony\Messenger\BrefMessengerBundle;
-use Nyholm\BundleTest\BaseBundleTestCase;
-use Symfony\Component\DependencyInjection\Container;
+use Nyholm\BundleTest\TestKernel;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\KernelInterface;
 
-abstract class BaseFunctionalTest extends BaseBundleTestCase
+abstract class BaseFunctionalTest extends KernelTestCase
 {
-    /** @var Container */
-    protected $container;
-
-    protected function getBundleClass()
+    protected static function getKernelClass(): string
     {
-        return BrefMessengerBundle::class;
+        return TestKernel::class;
     }
 
-    protected function setUp(): void
+    protected static function createKernel(array $options = []): KernelInterface
     {
-        parent::setUp();
-        $kernel = $this->createKernel();
+        /**
+         * @var TestKernel $kernel
+         */
+        $kernel = parent::createKernel($options);
+        $kernel->addTestBundle(BrefMessengerBundle::class);
+        $kernel->handleOptions($options);
 
-        // Add some configuration
-        $configDir = dirname(__DIR__) . '/Resources/config/';
-        foreach ($this->getDefaultConfig() as $file) {
-            $kernel->addConfigFile($configDir . $file);
-        }
-
-        $this->bootKernel();
-        $this->container = $this->getContainer()->get('test.service_container');
-    }
-
-    protected function getDefaultConfig(): array
-    {
-        return [];
+        return $kernel;
     }
 }

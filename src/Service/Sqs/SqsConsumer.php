@@ -5,6 +5,7 @@ namespace Bref\Symfony\Messenger\Service\Sqs;
 use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
+use Bref\Event\Sqs\SqsRecord;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -51,17 +52,20 @@ final class SqsConsumer extends SqsHandler
     {
         $isFifoQueue = null;
         $hasPreviousMessageFailed = false;
+        $failingMessageGroupIds = [];
 
         foreach ($event->getRecords() as $record) {
             if ($isFifoQueue === null) {
                 $isFifoQueue = \str_ends_with($record->toArray()['eventSourceARN'], '.fifo');
             }
 
+            $messageGroupId = $this->readMessageGroupIdOfRecord($record);
+
             /*
              * When using FIFO queues, preserving order is important.
              * If a previous message has failed in the batch, we need to skip the next ones and requeue them.
              */
-            if ($isFifoQueue && $hasPreviousMessageFailed) {
+            if ($isFifoQueue && $hasPreviousMessageFailed && in_array($messageGroupId, $failingMessageGroupIds, true)) {
                 $this->markAsFailed($record);
                 continue;
             }
@@ -102,7 +106,14 @@ final class SqsConsumer extends SqsHandler
                 $this->logger->error($exception->getMessage());
                 $this->markAsFailed($record);
                 $hasPreviousMessageFailed = true;
+                $failingMessageGroupIds[] = $this->readMessageGroupIdOfRecord($record);
             }
         }
+    }
+
+    private function readMessageGroupIdOfRecord(SqsRecord $record): ?string
+    {
+        $recordAsArray = $record->toArray();
+        return $recordAsArray['attributes']['MessageGroupId'] ?? null;
     }
 }

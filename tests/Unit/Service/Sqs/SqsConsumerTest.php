@@ -84,6 +84,7 @@ class SqsConsumerTest extends TestCase
                 $transport,
             ),
             $this->aSqsRecord(
+                new TestMessage('test3'),
                 'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f',
                 'Test message 3',
                 ['Special\Header\Name' => 'some data'],
@@ -148,6 +149,7 @@ class SqsConsumerTest extends TestCase
                 true,
             ),
             $this->aSqsRecord(
+                new TestMessage('test3'),
                 'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f',
                 'Test message 3',
                 ['Special\Header\Name' => 'some data'],
@@ -213,6 +215,7 @@ class SqsConsumerTest extends TestCase
                 'Test message 2',
                 $transport,
                 true,
+                null,
                 new UnrecoverableMessageHandlingException('no retry')
             ),
             $this->sqsRecordWillSuccessfullyBeHandled(
@@ -230,7 +233,99 @@ class SqsConsumerTest extends TestCase
         $this->assertEmpty($failures);
     }
 
-    private function sqsRecordWillSuccessfullyBeHandled(object $message, string $messageId, string $body, string $transport, bool $fifo = false): array
+    public function test_message_group_id_during_batch_of_fifo_queue()
+    {
+        $transport = 'async';
+        $sqsRecords = [
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test'),
+                'e00c848c-2579-4f6a-a006-ccdc2808ed64',
+                'Test message 1',
+                $transport,
+                true,
+            ),
+            $this->sqsRecordWillFailDuringHandle(
+                new TestMessage('test2'),
+                '6c4b71a8-eb2e-4373-9d07-478982ff0905',
+                'Test message 2',
+                $transport,
+                true,
+                'Group1',
+            ),
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test3'),
+                'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f',
+                'Test message 3',
+                $transport,
+                true,
+                'Group2',
+            ),
+            $this->aSqsRecord(
+                new TestMessage('test4'),
+                'hjc4b71a8-eb2e-4373-9d07-478982ff0905',
+                'Test message 4',
+                [],
+                true,
+                'Group1',
+            ),
+        ];
+
+        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+
+        $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
+        $this->assertNotContains(['itemIdentifier' => 'e00c848c-2579-4f6a-a006-ccdc2808ed64'], $failures['batchItemFailures']);
+        $this->assertContains(['itemIdentifier' => '6c4b71a8-eb2e-4373-9d07-478982ff0905'], $failures['batchItemFailures']);
+        $this->assertNotContains(['itemIdentifier' => 'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f'], $failures['batchItemFailures']);
+        $this->assertContains(['itemIdentifier' => 'hjc4b71a8-eb2e-4373-9d07-478982ff0905'], $failures['batchItemFailures']);
+    }
+
+    public function test_different_message_group_id_failed_during_batch_of_fifo_queue()
+    {
+        $transport = 'async';
+        $sqsRecords = [
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test'),
+                'e00c848c-2579-4f6a-a006-ccdc2808ed64',
+                'Test message 1',
+                $transport,
+                true,
+            ),
+            $this->sqsRecordWillFailDuringHandle(
+                new TestMessage('test2'),
+                '6c4b71a8-eb2e-4373-9d07-478982ff0905',
+                'Test message 2',
+                $transport,
+                true,
+                'Group1',
+            ),
+            $this->sqsRecordWillFailDuringHandle(
+                new TestMessage('test3'),
+                'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f',
+                'Test message 3',
+                $transport,
+                true,
+                'Group2',
+            ),
+            $this->aSqsRecord(
+                new TestMessage('test4'),
+                'hjc4b71a8-eb2e-4373-9d07-478982ff0905',
+                'Test message 4',
+                [],
+                true,
+                'Group1',
+            ),
+        ];
+
+        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+
+        $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
+        $this->assertNotContains(['itemIdentifier' => 'e00c848c-2579-4f6a-a006-ccdc2808ed64'], $failures['batchItemFailures']);
+        $this->assertContains(['itemIdentifier' => '6c4b71a8-eb2e-4373-9d07-478982ff0905'], $failures['batchItemFailures']);
+        $this->assertContains(['itemIdentifier' => 'f8e71ae8-2ae3-4400-a7a0-1193c1a7210f'], $failures['batchItemFailures']);
+        $this->assertContains(['itemIdentifier' => 'hjc4b71a8-eb2e-4373-9d07-478982ff0905'], $failures['batchItemFailures']);
+    }
+
+    private function sqsRecordWillSuccessfullyBeHandled(object $message, string $messageId, string $body, string $transport, bool $fifo = false, ?string $messageGroupId = null): array
     {
         return $this->sqsRecordWillSuccessfullyBeHandledWithStamps(
             $message,
@@ -240,7 +335,8 @@ class SqsConsumerTest extends TestCase
             [
                 new AmazonSqsReceivedStamp($messageId),
             ],
-            $fifo
+            $fifo,
+            $messageGroupId,
         );
     }
 
@@ -259,14 +355,10 @@ class SqsConsumerTest extends TestCase
         );
     }
 
-    private function sqsRecordWillSuccessfullyBeHandledWithStamps(object $message, string $messageId, string $body, string $transport, array $stamps = [], bool $fifo = false): array
+    private function sqsRecordWillSuccessfullyBeHandledWithStamps(object $message, string $messageId, string $body, string $transport, array $stamps = [], bool $fifo = false, ?string $messageGroupId = null): array
     {
         $specialHeaders = ['Special\Header\Name' => 'some data'];
-        $headers = array_merge($specialHeaders, [
-            'Content-Type' => 'application/json',
-        ]);
 
-        $this->serializer->decode(['body' => $body, 'headers' => $headers])->willReturn(new Envelope($message));
         $this->busDriver
             ->putEnvelopeOnBus(
                 $this->bus,
@@ -279,17 +371,13 @@ class SqsConsumerTest extends TestCase
             ->shouldBeCalled()
         ;
 
-        return $this->aSqsRecord($messageId, $body, $specialHeaders, $fifo);
+        return $this->aSqsRecord($message, $messageId, $body, $specialHeaders, $fifo, $messageGroupId);
     }
 
-    private function sqsRecordWillFailDuringHandle(object $message, string $messageId, string $body, string $transport, bool $fifo = false, ?Throwable $failure = null): array
+    private function sqsRecordWillFailDuringHandle(object $message, string $messageId, string $body, string $transport, bool $fifo = false, ?string $messageGroupId = null, ?Throwable $failure = null): array
     {
         $specialHeaders = ['Special\Header\Name' => 'some data'];
-        $headers = array_merge($specialHeaders, [
-            'Content-Type' => 'application/json',
-        ]);
 
-        $this->serializer->decode(['body' => $body, 'headers' => $headers])->willReturn(new Envelope($message));
         $this->busDriver
             ->putEnvelopeOnBus(
                 $this->bus,
@@ -304,13 +392,24 @@ class SqsConsumerTest extends TestCase
             ->willThrow($failure ?? new \Exception('boom'))
         ;
 
-        return $this->aSqsRecord($messageId, $body, $specialHeaders, $fifo);
+        return $this->aSqsRecord($message, $messageId, $body, $specialHeaders, $fifo, $messageGroupId);
     }
 
-    private function aSqsRecord(string $messageId, string $body, array $specialHeaders, bool $fifo = false): array
+    private function aSqsRecord(object $message, string $messageId, string $body, array $specialHeaders, bool $fifo = false, ?string $messageGroupId = null): array
     {
+        $headers = array_merge($specialHeaders, [
+            'Content-Type' => 'application/json',
+        ]);
+        $this->serializer->decode(['body' => $body, 'headers' => $headers])->willReturn(new Envelope($message));
+
+        $attributes = [];
+        if ($messageGroupId !== null) {
+            $attributes['MessageGroupId'] = $messageGroupId;
+        }
+
         return [
             'body' => $body,
+            'attributes' => $attributes,
             'messageAttributes' => [
                 'Content-Type' => [
                     'dataType' => 'String',

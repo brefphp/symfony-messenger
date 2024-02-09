@@ -23,7 +23,9 @@ final class SqsConsumer extends SqsHandler
     private $bus;
     /** @var SerializerInterface */
     protected $serializer;
-    /** @var string */
+    /** @var SqsTransportNameResolver */
+    private $transportNameResolver;
+    /** @var string|null */
     private $transportName;
     /** @var BusDriver */
     private $busDriver;
@@ -36,13 +38,15 @@ final class SqsConsumer extends SqsHandler
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        string $transportName,
+        SqsTransportNameResolver $transportNameResolver,
+        string $transportName = null,
         LoggerInterface $logger = null,
         bool $partialBatchFailure = false
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;
         $this->serializer = $serializer;
+        $this->transportNameResolver = $transportNameResolver;
         $this->transportName = $transportName;
         $this->logger = $logger ?? new NullLogger();
         $this->partialBatchFailure = $partialBatchFailure;
@@ -93,7 +97,7 @@ final class SqsConsumer extends SqsHandler
                 if ('' !== $context->getTraceId()) {
                     $stamps[] = new AmazonSqsXrayTraceHeaderStamp($context->getTraceId());
                 }
-                $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName);
+                $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName ?? ($this->transportNameResolver)($record));
             } catch (UnrecoverableExceptionInterface $exception) {
                 $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. But failure was marked as unrecoverable. Message will be acknowledged.', $record->getMessageId()));
                 $this->logger->error($exception);

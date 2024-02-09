@@ -3,11 +3,10 @@
 namespace Bref\Symfony\Messenger\Test\Unit\Service\Sqs;
 
 use Bref\Context\Context;
-use Bref\Event\Sqs\SqsEvent;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Bref\Symfony\Messenger\Service\Sqs\SqsConsumer;
+use Bref\Symfony\Messenger\Service\Sqs\SqsTransportNameResolver;
 use Bref\Symfony\Messenger\Test\Resources\TestMessage\TestMessage;
-use LogicException;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -16,7 +15,6 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsXrayTraceHea
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Symfony\Component\Messenger\MessageBus;
-use Symfony\Component\Messenger\Transport\Serialization\Serializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Throwable;
 
@@ -30,11 +28,14 @@ class SqsConsumerTest extends TestCase
 
     private MessageBus $bus;
 
+    private $sqsTransportNameResolver;
+
     /** @before */
     public function prepare()
     {
         $this->busDriver = $this->prophesize(BusDriver::class);
         $this->serializer = $this->prophesize(SerializerInterface::class);
+        $this->sqsTransportNameResolver = $this->prophesize(SqsTransportNameResolver::class);
         $this->bus = new MessageBus;
     }
 
@@ -62,9 +63,56 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport);
+        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $this->sqsTransportNameResolver->reveal());
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
         $this->assertEmpty($failures);
+    }
+
+    public function test_event_with_transport_detection(): void
+    {
+        $transport = 'async';
+        $sqsRecords = [
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test'),
+                'e00c848c-2579-4f6a-a006-ccdc2808ed64',
+                'Test message 1',
+                $transport,
+            )
+        ];
+
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal()
+        );
+
+        $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
+    }
+
+    public function test_event_with_manually_set_transport(): void
+    {
+        $transport = 'async_test';
+        $sqsRecords = [
+            $this->sqsRecordWillSuccessfullyBeHandled(
+                new TestMessage('test'),
+                'e00c848c-2579-4f6a-a006-ccdc2808ed64',
+                'Test message 1',
+                $transport,
+            )
+        ];
+
+        $this->sqsTransportNameResolver->__invoke(Argument::cetera())->shouldNotBeCalled();
+
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal(),
+            'async_test'
+        );
+
+        $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
     }
 
     public function test_batch_events_with_failure()
@@ -91,7 +139,12 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal()
+        );
 
         $this->expectExceptionMessage('boom');
         $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
@@ -121,7 +174,15 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal(),
+            null,
+            null,
+            true
+        );
 
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
 
@@ -156,7 +217,15 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal(),
+            null,
+            null,
+            true
+        );
 
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
 
@@ -193,7 +262,12 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal()
+        );
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', $xrayTraceId));
         $this->assertEmpty($failures);
     }
@@ -227,7 +301,15 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal(),
+            null,
+            null,
+            true
+        );
 
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
         $this->assertEmpty($failures);
@@ -270,7 +352,15 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal(),
+            null,
+            null,
+            true
+        );
 
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
         $this->assertNotContains(['itemIdentifier' => 'e00c848c-2579-4f6a-a006-ccdc2808ed64'], $failures['batchItemFailures']);
@@ -316,7 +406,15 @@ class SqsConsumerTest extends TestCase
             ),
         ];
 
-        $consumer = new SqsConsumer($this->busDriver->reveal(), $this->bus, $this->serializer->reveal(), $transport, null, true);
+        $consumer = new SqsConsumer(
+            $this->busDriver->reveal(),
+            $this->bus,
+            $this->serializer->reveal(),
+            $this->sqsTransportNameResolver->reveal(),
+            null,
+            null,
+            true
+        );
 
         $failures = $consumer->handle(['Records' => $sqsRecords], new Context('', 0, '', ''));
         $this->assertNotContains(['itemIdentifier' => 'e00c848c-2579-4f6a-a006-ccdc2808ed64'], $failures['batchItemFailures']);
@@ -370,6 +468,8 @@ class SqsConsumerTest extends TestCase
             )
             ->shouldBeCalled()
         ;
+
+        $this->sqsTransportNameResolver->__invoke(Argument::cetera())->willReturn($transport);
 
         return $this->aSqsRecord($message, $messageId, $body, $specialHeaders, $fifo, $messageGroupId);
     }

@@ -15,21 +15,25 @@ final class SnsConsumer extends SnsHandler
     private $bus;
     /** @var SerializerInterface */
     protected $serializer;
-    /** @var string */
-    private $transportName;
+    /** @var SnsTransportNameResolver */
+    private $transportNameResolver;
     /** @var BusDriver */
     private $busDriver;
+    /** @var string|null */
+    private $transportName;
 
     public function __construct(
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        string $transportName
+        SnsTransportNameResolver $transportNameResolver,
+        string $transportName = null
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;
         $this->serializer = $serializer;
         $this->transportName = $transportName;
+        $this->transportNameResolver = $transportNameResolver;
     }
 
     public function handleSns(SnsEvent $event, Context $context): void
@@ -39,7 +43,7 @@ final class SnsConsumer extends SnsHandler
             $headers = isset($attributes['Headers']) ? $attributes['Headers']->getValue() : '[]';
             $envelope = $this->serializer->decode(['body' => $record->getMessage(), 'headers' => json_decode($headers, true)]);
 
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName);
+            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName ?? ($this->transportNameResolver)($record));
         }
     }
 }

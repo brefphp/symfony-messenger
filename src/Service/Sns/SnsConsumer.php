@@ -5,7 +5,9 @@ namespace Bref\Symfony\Messenger\Service\Sns;
 use Bref\Context\Context;
 use Bref\Event\Sns\SnsEvent;
 use Bref\Event\Sns\SnsHandler;
+use Bref\Event\Sns\SnsRecord;
 use Bref\Symfony\Messenger\Service\BusDriver;
+use LogicException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
@@ -15,19 +17,19 @@ final class SnsConsumer extends SnsHandler
     private $bus;
     /** @var SerializerInterface */
     protected $serializer;
-    /** @var SnsTransportNameResolver */
-    private $transportNameResolver;
-    /** @var BusDriver */
-    private $busDriver;
     /** @var string|null */
     private $transportName;
+    /** @var BusDriver */
+    private $busDriver;
+    /** @var SnsTransportNameResolver|null */
+    private $transportNameResolver;
 
     public function __construct(
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        SnsTransportNameResolver $transportNameResolver,
-        string $transportName = null
+        string $transportName = null,
+        SnsTransportNameResolver $transportNameResolver = null,
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;
@@ -43,7 +45,16 @@ final class SnsConsumer extends SnsHandler
             $headers = isset($attributes['Headers']) ? $attributes['Headers']->getValue() : '[]';
             $envelope = $this->serializer->decode(['body' => $record->getMessage(), 'headers' => json_decode($headers, true)]);
 
-            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->transportName ?? ($this->transportNameResolver)($record));
+            $this->busDriver->putEnvelopeOnBus($this->bus, $envelope, $this->resolveTransportName($record));
         }
+    }
+
+    private function resolveTransportName(SnsRecord $record): string
+    {
+        if (null === $this->transportName && null === $this->transportNameResolver) {
+            throw new LogicException('You need to set $transportNameResolver or $transportName.');
+        }
+
+        return $this->transportName ?? ($this->transportNameResolver)($record);
     }
 }

@@ -7,6 +7,7 @@ use Bref\Event\Sns\SnsEvent;
 use Bref\Symfony\Messenger\Service\BusDriver;
 use Bref\Symfony\Messenger\Service\Sns\SnsConsumer;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransportNameResolver;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBus;
@@ -60,6 +61,7 @@ class SnsConsumerTest extends TestCase
             $this->busDriver,
             $this->bus,
             $this->serializer,
+            null,
             $this->snsTransportNameResolver
         );
 
@@ -86,6 +88,7 @@ class SnsConsumerTest extends TestCase
             $this->busDriver,
             $this->bus,
             $this->serializer,
+            null,
             $this->snsTransportNameResolver
         );
 
@@ -111,8 +114,8 @@ class SnsConsumerTest extends TestCase
             $this->busDriver,
             $this->bus,
             $this->serializer,
-            $this->snsTransportNameResolver,
-            'async'
+            'async',
+            $this->snsTransportNameResolver
         );
 
         $event = $this->snsEvent($body, $headers);

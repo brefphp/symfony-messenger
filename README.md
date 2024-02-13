@@ -175,8 +175,6 @@ services:
         public: true
         autowire: true
         arguments:
-            # Pass the transport name used in config/packages/messenger.yaml
-            $transportName: 'async'
             # true enables partial SQS batch failure
             # Enabling this without proper SQS config will consider all your messages successful
             # See https://bref.sh/docs/function/handlers.html#partial-batch-response for more details.
@@ -296,9 +294,6 @@ services:
     Bref\Symfony\Messenger\Service\Sns\SnsConsumer:
         public: true
         autowire: true
-        arguments:
-            # Pass the transport name used in config/packages/messenger.yaml
-            $transportName: 'async'
 ```
 
 Now, anytime a message is dispatched to SNS, the Lambda function will be called. The Bref consumer class will put back the message into Symfony Messenger to be processed.
@@ -390,7 +385,6 @@ services:
         public: true
         autowire: true
         arguments:
-            # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
             # Optionnally, if you have different buses in config/packages/messenger.yaml, set $bus like below:
             # $bus: '@event.bus'
@@ -456,6 +450,34 @@ services:
                 region: us-east-1
 ```
 
+### Automatic transport recognition
+
+Automatic transport recognition is primarily handled by default through TransportNameResolvers for SNS and SQS,
+ensuring that the transport name is automatically passed to your message handlers.
+However, in scenarios where you need to manually specify the transport name or adjust the default behavior,
+you can do so by setting the `$transportName` parameter in your service definitions within the config/services.yaml file.
+This parameter should match the transport name defined in your config/packages/messenger.yaml.
+For instance, for a SNSConsumer, you would configure it as follows:
+
+```yaml
+# config/packages/messenger.yaml
+framework:
+  messenger:
+    transports:
+      async: '%env(MESSENGER_TRANSPORT_DSN)%'
+```
+
+```yaml
+# config/services.yaml
+services:
+    Bref\Symfony\Messenger\Service\Sns\SnsConsumer:
+        public: true
+        autowire: true
+        arguments:
+            # Pass the transport name used in config/packages/messenger.yaml
+            $transportName: 'async'
+```
+
 ### Disabling transports
 
 By default, this package registers Symfony Messenger transports for SQS, SNS and EventBridge.
@@ -481,6 +503,5 @@ services:
         public: true
         autowire: true
         arguments:
-            $transportName: 'async'
             $serializer: '@Happyr\MessageSerializer\Serializer'
 ```

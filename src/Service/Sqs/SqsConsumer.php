@@ -7,6 +7,7 @@ use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Event\Sqs\SqsRecord;
 use Bref\Symfony\Messenger\Service\BusDriver;
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsReceivedStamp;
@@ -23,7 +24,9 @@ final class SqsConsumer extends SqsHandler
     private $bus;
     /** @var SerializerInterface */
     protected $serializer;
-    /** @var string */
+    /** @var SqsTransportNameResolver */
+    private $transportNameResolver;
+    /** @var string|null */
     private $transportName;
     /** @var BusDriver */
     private $busDriver;
@@ -36,9 +39,10 @@ final class SqsConsumer extends SqsHandler
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        string $transportName,
+        string $transportName = null,
         LoggerInterface $logger = null,
-        bool $partialBatchFailure = false
+        bool $partialBatchFailure = false,
+        SqsTransportNameResolver $transportNameResolver = null
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;
@@ -46,6 +50,7 @@ final class SqsConsumer extends SqsHandler
         $this->transportName = $transportName;
         $this->logger = $logger ?? new NullLogger();
         $this->partialBatchFailure = $partialBatchFailure;
+        $this->transportNameResolver = $transportNameResolver;
     }
 
     public function handleSqs(SqsEvent $event, Context $context): void
@@ -93,7 +98,7 @@ final class SqsConsumer extends SqsHandler
                 if ('' !== $context->getTraceId()) {
                     $stamps[] = new AmazonSqsXrayTraceHeaderStamp($context->getTraceId());
                 }
-                $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->transportName);
+                $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->resolveTransportName($record));
             } catch (UnrecoverableExceptionInterface $exception) {
                 $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. But failure was marked as unrecoverable. Message will be acknowledged.', $record->getMessageId()));
                 $this->logger->error($exception);
@@ -115,5 +120,14 @@ final class SqsConsumer extends SqsHandler
     {
         $recordAsArray = $record->toArray();
         return $recordAsArray['attributes']['MessageGroupId'] ?? null;
+    }
+
+    private function resolveTransportName(SqsRecord $record): string
+    {
+        if (null === $this->transportName && null === $this->transportNameResolver) {
+            throw new LogicException('You need to set $transportNameResolver or $transportName.');
+        }
+
+        return $this->transportName ?? ($this->transportNameResolver)($record);
     }
 }

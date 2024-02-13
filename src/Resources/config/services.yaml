@@ -4,13 +4,25 @@ services:
         arguments:
             - '@logger'
 
+    Bref\Symfony\Messenger\Service\MessengerTransportConfiguration:
+        arguments:
+            $messengerTransportsConfiguration: '%messenger.transports%'
+
     # SNS
+    Bref\Symfony\Messenger\Service\Sns\SnsTransportNameResolver:
+        arguments:
+            - '@Bref\Symfony\Messenger\Service\MessengerTransportConfiguration'
     Bref\Symfony\Messenger\Service\Sns\SnsTransportFactory:
         tags: ['messenger.transport_factory']
         arguments:
             - '@bref.messenger.sns_client'
     bref.messenger.sns_client:
         class: AsyncAws\Sns\SnsClient
+
+    # SQS
+    Bref\Symfony\Messenger\Service\Sqs\SqsTransportNameResolver:
+        arguments:
+            - '@Bref\Symfony\Messenger\Service\MessengerTransportConfiguration'
 
     # EventBridge
     Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory:

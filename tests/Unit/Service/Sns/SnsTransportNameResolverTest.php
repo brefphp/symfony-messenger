@@ -16,6 +16,7 @@ final class SnsTransportNameResolverTest extends TestCase
     public function test_event_source_can_resolved_as_expected(): void
     {
         $messengerTransportConfiguration = $this->prophesize(MessengerTransportConfiguration::class);
+        /** @phpstan-ignore-next-line */
         $messengerTransportConfiguration
             ->provideTransportFromEventSource(Argument::cetera())
             ->willReturn('async');

@@ -19,11 +19,11 @@ class SnsTransportNameResolver
     /** @throws InvalidArgumentException */
     public function __invoke(SnsRecord $snsRecord): string
     {
-        if (!array_key_exists('EventSubscriptionArn', $snsRecord->toArray())) {
-            throw new InvalidArgumentException('EventSubscriptionArn is missing in sns record.');
+        if (!array_key_exists('TopicArn', $snsRecord->toArray()['Sns'])) {
+            throw new InvalidArgumentException('TopicArn is missing in sns record.');
         }
 
-        $eventSourceArn = $snsRecord->getEventSubscriptionArn();
+        $eventSourceArn = $snsRecord->getTopicArn();
 
         return $this->configurationProvider->provideTransportFromEventSource(self::TRANSPORT_PROTOCOL . $eventSourceArn);
     }

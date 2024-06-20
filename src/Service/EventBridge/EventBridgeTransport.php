@@ -6,28 +6,34 @@ use AsyncAws\EventBridge\EventBridgeClient;
 use Exception;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
-use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Throwable;
 
 final class EventBridgeTransport implements TransportInterface
 {
-    /** @var SerializerInterface */
-    private $serializer;
-    /** @var EventBridgeClient */
-    private $eventBridge;
-    /** @var string */
-    private $source;
-    /** @var string */
-    private $eventBusName;
+    private SerializerInterface $serializer;
 
-    public function __construct(EventBridgeClient $eventBridge, SerializerInterface $serializer, string $source, ?string $eventBusName = null)
-    {
+    private EventBridgeClient $eventBridge;
+
+    private string $source;
+
+    private ?string $eventBusName;
+
+    private ?EventBridgeDetailTypeResolver $detailTypeResolver;
+
+    public function __construct(
+        EventBridgeClient $eventBridge,
+        SerializerInterface $serializer,
+        string $source,
+        ?string $eventBusName = null,
+        ?EventBridgeDetailTypeResolver $detailTypeResolver = null
+    ) {
         $this->eventBridge = $eventBridge;
         $this->serializer = $serializer;
         $this->source = $source;
         $this->eventBusName = $eventBusName;
+        $this->detailTypeResolver = $detailTypeResolver;
     }
 
     public function send(Envelope $envelope): Envelope
@@ -37,8 +43,9 @@ final class EventBridgeTransport implements TransportInterface
             'Entries' => [
                 [
                     'Detail' => json_encode($encodedMessage, JSON_THROW_ON_ERROR),
-                    // Ideally here we could put the class name of the message, but how to retrieve it?
-                    'DetailType' => 'Symfony Messenger message',
+                    'DetailType' => $this->detailTypeResolver !== null ?
+                        $this->detailTypeResolver->resolveDetailType($envelope) :
+                        'Symfony Messenger message',
                     'Source' => $this->source,
                 ],
             ],

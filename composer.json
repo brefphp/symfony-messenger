@@ -18,7 +18,7 @@
         "php": ">=8.0",
         "ext-json": "*",
         "async-aws/sns": "^1.0",
-        "async-aws/sqs": "^1.2",
+        "async-aws/sqs": "^1.2|^2.0",
         "async-aws/event-bridge": "^1.0",
         "bref/bref": "^1.5 || ^2.0",
         "symfony/amazon-sqs-messenger": "^5.4 || ^6.0 || ^7.0",

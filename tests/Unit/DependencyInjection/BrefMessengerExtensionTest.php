@@ -33,7 +33,7 @@ class BrefMessengerExtensionTest extends AbstractExtensionTestCase
             ->with('framework')
             ->willReturn($existConfig);
 
-        $container->expects(self::atMost(2))
+        $container->expects(self::once())
             ->method('setParameter')
             ->with(
                 'messenger.transports',

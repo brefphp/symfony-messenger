@@ -28,13 +28,16 @@ class BrefMessengerExtension extends Extension implements PrependExtensionInterf
 
     private function getMessengerTransports(array $frameworkConfig): array
     {
-        $transportConfigs = array_column($frameworkConfig, 'messenger.transports');
+        $transportConfigs = array_column(
+            array_column($frameworkConfig, 'messenger'),
+            'transports',
+        );
         $transportConfigs = array_filter($transportConfigs);
 
         if (empty($transportConfigs)) {
             return [];
         }
 
-        return array_merge_recursive(...$transportConfigs);
+        return array_merge(...$transportConfigs);
     }
 }

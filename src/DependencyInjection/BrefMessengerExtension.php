@@ -18,12 +18,23 @@ class BrefMessengerExtension extends Extension implements PrependExtensionInterf
 
     public function prepend(ContainerBuilder $container): void
     {
-        $configs = $container->getExtensionConfig('framework');
+        $frameworkConfig = $container->getExtensionConfig('framework');
+        $messengerTransports = $this->getMessengerTransports($frameworkConfig);
 
-        foreach (array_reverse($configs) as $config) {
-            if (array_key_exists('messenger', $config)) {
-                $container->setParameter('messenger.transports', $config['messenger']['transports']);
-            }
+        if (! empty($messengerTransports)) {
+            $container->setParameter('messenger.transports', $messengerTransports);
         }
+    }
+
+    private function getMessengerTransports(array $frameworkConfig): array
+    {
+        $transportConfigs = array_column($frameworkConfig, 'messenger.transports');
+        $transportConfigs = array_filter($transportConfigs);
+
+        if (empty($transportConfigs)) {
+            return [];
+        }
+
+        return array_merge_recursive(...$transportConfigs);
     }
 }

@@ -210,52 +210,28 @@ class BrefMessengerExtensionTest extends AbstractExtensionTestCase
                 ],
             ],
         ];
-    }
 
-    /**
-     * @dataProvider provideDoesNotSetMessengerTransportsParameterCases
-     */
-    public function testPrependDoesNotSetMessengerTransportsParameterWhenNoMessengerConfigExists(
-        array $config,
-    ): void {
-        $container = self::createMock(ContainerBuilder::class);
-        $container->method('getExtensionConfig')
-            ->with('framework')
-            ->willReturn($config);
-
-        $container->expects(self::never())->method('setParameter');
-
-        $extension = new BrefMessengerExtension;
-        $extension->prepend($container);
-    }
-
-    public function provideDoesNotSetMessengerTransportsParameterCases(): iterable
-    {
-        yield 'empty config' => [
-            'config' => [],
-        ];
-
-        yield 'empty messenger config' => [
-            'config' => [
-                'messenger' => [],
-            ],
-        ];
-
-        yield 'not empty messenger config without transports key' => [
-            'config' => [
-                'messenger' => [
-                    'busses' => [],
+        yield 'empty transports config when messenger only consuming messages' => [
+            'existConfig' => [
+                [
+                    'messenger' => [
+                        'transports' => [],
+                    ],
                 ],
             ],
+            'expectedTransportsParameter' => [],
         ];
 
-        yield 'not empty messenger config with empty transports key' => [
-            'config' => [
-                'messenger' => [
-                    'transports' => [],
-                    'busses' => [],
+        yield 'multiple messenger configs with empty transports key when messenger only consuming messages' => [
+            'existConfig' => [
+                [
+                    'messenger' => [
+                        'transports' => [],
+                        'busses' => [],
+                    ],
                 ],
             ],
+            'expectedTransportsParameter' => [],
         ];
     }
 }

@@ -21,9 +21,7 @@ class BrefMessengerExtension extends Extension implements PrependExtensionInterf
         $frameworkConfig = $container->getExtensionConfig('framework');
         $messengerTransports = $this->getMessengerTransports($frameworkConfig);
 
-        if (! empty($messengerTransports)) {
-            $container->setParameter('messenger.transports', $messengerTransports);
-        }
+        $container->setParameter('messenger.transports', $messengerTransports);
     }
 
     private function getMessengerTransports(array $frameworkConfig): array

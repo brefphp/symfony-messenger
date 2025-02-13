@@ -41,7 +41,7 @@ final class SnsTransport implements TransportInterface
         if (str_contains($this->topic, ".fifo")) {
             $stamps = $envelope->all();
             $dedupeStamp = $stamps[SnsFifoStamp::class][0] ?? false;
-            if (!$dedupeStamp) {
+            if (!$dedupeStamp || $dedupeStamp instanceof SnsFifoStamp == false) {
                 throw new Exception("SnsFifoStamp required for fifo topic");
             }
             $messageGroupId = $dedupeStamp->getMessageGroupId() ?? false;

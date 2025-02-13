@@ -2,6 +2,7 @@
 
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
+use Throwable;
 use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
@@ -39,10 +40,10 @@ final class SqsConsumer extends SqsHandler
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        string $transportName = null,
-        LoggerInterface $logger = null,
+        ?string $transportName = null,
+        ?LoggerInterface $logger = null,
         bool $partialBatchFailure = false,
-        SqsTransportNameResolver $transportNameResolver = null
+        ?SqsTransportNameResolver $transportNameResolver = null
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;
@@ -102,7 +103,7 @@ final class SqsConsumer extends SqsHandler
             } catch (UnrecoverableExceptionInterface $exception) {
                 $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. But failure was marked as unrecoverable. Message will be acknowledged.', $record->getMessageId()));
                 $this->logger->error($exception);
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 if ($this->partialBatchFailure === false) {
                     throw $exception;
                 }

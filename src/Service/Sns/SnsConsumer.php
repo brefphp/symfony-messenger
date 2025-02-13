@@ -28,8 +28,8 @@ final class SnsConsumer extends SnsHandler
         BusDriver $busDriver,
         MessageBusInterface $bus,
         SerializerInterface $serializer,
-        string $transportName = null,
-        SnsTransportNameResolver $transportNameResolver = null,
+        ?string $transportName = null,
+        ?SnsTransportNameResolver $transportNameResolver = null,
     ) {
         $this->busDriver = $busDriver;
         $this->bus = $bus;

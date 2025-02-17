@@ -29,5 +29,7 @@ services:
         tags: ['messenger.transport_factory']
         arguments:
             - '@bref.messenger.eventbridge_client'
+            - '@?bref.messenger.eventbridge_detail_type_resolver'
     bref.messenger.eventbridge_client:
         class: AsyncAws\EventBridge\EventBridgeClient
+

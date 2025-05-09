@@ -12,7 +12,7 @@ class SqsTransportNameResolver
     private const TRANSPORT_PROTOCOL = 'sqs://';
 
     public function __construct(
-        private MessengerTransportConfiguration $configurationProvider
+        private SQSMessengerTransportConfiguration $configurationProvider
     ) {
     }
 

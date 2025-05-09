@@ -20,9 +20,13 @@ services:
         class: AsyncAws\Sns\SnsClient
 
     # SQS
+    Bref\Symfony\Messenger\Service\Sqs\SQSMessengerTransportConfiguration:
+        arguments:
+            $messengerTransportsConfiguration: '%messenger.transports%'
+
     Bref\Symfony\Messenger\Service\Sqs\SqsTransportNameResolver:
         arguments:
-            - '@Bref\Symfony\Messenger\Service\MessengerTransportConfiguration'
+            - '@Bref\Symfony\Messenger\Service\Sqs\SQSMessengerTransportConfiguration'
 
     # EventBridge
     Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory:

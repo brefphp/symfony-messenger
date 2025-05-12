@@ -4,7 +4,7 @@ namespace Bref\Symfony\Messenger\Service\Sqs;
 
 use InvalidArgumentException;
 
-final class SQSMessengerTransportConfiguration
+final class SQSMessengerTransportConfiguration implements SQSMessengerTransportConfigurationInterface
 {
     public function __construct(
         private array $messengerTransportsConfiguration

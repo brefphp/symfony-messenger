@@ -3,7 +3,6 @@
 namespace Bref\Symfony\Messenger\Service\Sqs;
 
 use Bref\Event\Sqs\SqsRecord;
-use Bref\Symfony\Messenger\Service\MessengerTransportConfiguration;
 use InvalidArgumentException;
 
 /** @final */
@@ -12,7 +11,7 @@ class SqsTransportNameResolver
     private const TRANSPORT_PROTOCOL = 'sqs://';
 
     public function __construct(
-        private SQSMessengerTransportConfiguration $configurationProvider
+        private SQSMessengerTransportConfigurationInterface $configurationProvider
     ) {
     }
 

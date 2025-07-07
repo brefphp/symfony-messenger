@@ -22,7 +22,7 @@ services:
     # SQS
     Bref\Symfony\Messenger\Service\Sqs\SqsTransportNameResolver:
         arguments:
-            - '@Bref\Symfony\Messenger\Service\MessengerTransportConfiguration'
+            $messengerTransportsConfiguration: '%messenger.transports%'
 
     # EventBridge
     Bref\Symfony\Messenger\Service\EventBridge\EventBridgeTransportFactory:

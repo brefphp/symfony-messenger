@@ -44,7 +44,7 @@ class BrefMessengerExtensionTest extends AbstractExtensionTestCase
         $extension->prepend($container);
     }
 
-    public function providePrependSetsMessengerTransportsParameterCases(): iterable
+    public static function providePrependSetsMessengerTransportsParameterCases(): iterable
     {
         yield 'single messenger config' => [
             'existConfig' => [

@@ -101,8 +101,8 @@ final class SqsConsumer extends SqsHandler
                 }
                 $this->busDriver->putEnvelopeOnBus($this->bus, $envelope->with(...$stamps), $this->resolveTransportName($record));
             } catch (UnrecoverableExceptionInterface $exception) {
-                $this->logger->error(sprintf('SQS record with id "%s" failed to be processed. But failure was marked as unrecoverable. Message will be acknowledged.', $record->getMessageId()));
-                $this->logger->error($exception->getMessage(), ['exception' => $exception]);
+                $this->logger->info(sprintf('SQS record with id "%s" failed to be processed. But failure was marked as unrecoverable. Message will be acknowledged.', $record->getMessageId()));
+                $this->logger->info($exception->getMessage(), ['exception' => $exception]);
             } catch (Throwable $exception) {
                 if ($this->partialBatchFailure === false) {
                     throw $exception;

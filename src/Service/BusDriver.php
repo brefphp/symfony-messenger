@@ -11,5 +11,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 interface BusDriver
 {
-    public function putEnvelopeOnBus(MessageBusInterface $bus, Envelope $envelope, string $transportName): void;
+    /** 
+     * @return Envelope|null 
+     */
+    public function putEnvelopeOnBus(MessageBusInterface $bus, Envelope $envelope, string $transportName);
 }

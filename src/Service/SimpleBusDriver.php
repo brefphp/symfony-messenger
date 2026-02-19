@@ -19,11 +19,11 @@ final class SimpleBusDriver implements BusDriver
         $this->logger = $logger;
     }
 
-    public function putEnvelopeOnBus(MessageBusInterface $bus, Envelope $envelope, string $transportName): void
+    public function putEnvelopeOnBus(MessageBusInterface $bus, Envelope $envelope, string $transportName): Envelope
     {
         try {
             $envelope = $envelope->with(new ReceivedStamp($transportName), new ConsumedByWorkerStamp);
-            $bus->dispatch($envelope);
+            $envelope = $bus->dispatch($envelope);
 
             $message = $envelope->getMessage();
             $this->logger->info('{class} was handled successfully.', [
@@ -31,6 +31,7 @@ final class SimpleBusDriver implements BusDriver
                 'message' => $message,
                 'transport' => $transportName,
             ]);
+            return $envelope;
         } catch (HandlerFailedException $e) {
             while ($e instanceof HandlerFailedException) {
                 $e = $e->getPrevious() ?? $e;

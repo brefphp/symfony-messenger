@@ -2,6 +2,9 @@
 
 The change log describes what is "Added", "Removed", "Changed" or "Fixed" between each release.
 
+## Unreleased
+
+Fixed: `SnsTransport` now writes the message headers the way `SqsConsumer` and Symfony's Amazon SQS transport read them, so a queue subscribed to an SNS topic can be consumed again. The aggregated `Headers` attribute `SnsConsumer` reads is published unchanged.
 ## 0.4.2
 
 Added support for [EventBusName](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutEventsRequestEntry.html#eventbridge-Type-PutEventsRequestEntry-EventBusName) with EventBridgeTransport

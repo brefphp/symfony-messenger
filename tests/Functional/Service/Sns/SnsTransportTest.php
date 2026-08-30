@@ -4,6 +4,7 @@ namespace Bref\Symfony\Messenger\Test\Functional\Service\Sns;
 
 use AsyncAws\Core\Test\ResultMockFactory;
 use AsyncAws\Sns\Result\PublishResponse;
+use AsyncAws\Sns\ValueObject\MessageAttributeValue;
 use AsyncAws\Sns\SnsClient;
 use Bref\Symfony\Messenger\Service\Sns\SnsFifoStamp;
 use Bref\Symfony\Messenger\Service\Sns\SnsTransport;
@@ -125,5 +126,146 @@ class SnsTransportTest extends BaseFunctionalTest
         $envelope = new Envelope($msg, [new SnsFifoStamp(null,"456")]);
         $resp = $snsTransport->send($envelope);
         $this->assertInstanceOf(Envelope::class, $resp);
+    }
+
+    public function testPublishesHeadersAsIndividualMessageAttributes(): void
+    {
+        $attributes = $this->publishWithHeaders([
+            'type' => TestMessage::class,
+            'Content-Type' => 'application/json',
+        ]);
+
+        $this->assertSame(TestMessage::class, $attributes['type']->getStringValue());
+        $this->assertSame('String', $attributes['type']->getDataType());
+        $this->assertSame('application/json', $attributes['Content-Type']->getStringValue());
+        $this->assertArrayNotHasKey('X-Symfony-Messenger', $attributes);
+    }
+
+    public function testKeepsPublishingTheAggregatedHeadersAttribute(): void
+    {
+        $headers = ['type' => TestMessage::class];
+
+        $attributes = $this->publishWithHeaders($headers);
+
+        $this->assertSame(json_encode($headers), $attributes['Headers']->getStringValue());
+    }
+
+    public function testAggregatesHeadersThatCannotBeAMessageAttribute(): void
+    {
+        $stampHeader = 'X-Message-Stamp-Symfony\\Component\\Messenger\\Stamp\\DelayStamp';
+
+        $attributes = $this->publishWithHeaders([
+            'type' => TestMessage::class,
+            $stampHeader => '[{"delay":1000}]',
+            'empty' => '',
+        ]);
+
+        $this->assertArrayNotHasKey($stampHeader, $attributes);
+        $this->assertArrayNotHasKey('empty', $attributes);
+        $this->assertSame(
+            json_encode([$stampHeader => '[{"delay":1000}]', 'empty' => '']),
+            $attributes['X-Symfony-Messenger']->getStringValue()
+        );
+    }
+
+    public function testHeadersSurviveTheRoundTripThroughAnSqsSubscriber(): void
+    {
+        $headers = [
+            'type' => TestMessage::class,
+            'Content-Type' => 'application/json',
+            'X-Message-Stamp-Symfony\\Component\\Messenger\\Stamp\\DelayStamp' => '[{"delay":1000}]',
+        ];
+
+        // The aggregated headers come back first, so the order differs from the one that was published.
+        $this->assertEquals($headers, $this->readBackAsSqsConsumerWould($this->publishWithHeaders($headers)));
+    }
+
+    /**
+     * @param array<string, string> $headers
+     *
+     * @return array<string, MessageAttributeValue>
+     */
+    private function publishWithHeaders(array $headers): array
+    {
+        $published = [];
+
+        $sns = $this->getMockBuilder(SnsClient::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['publish'])
+            ->getMock();
+        $sns->expects($this->once())
+            ->method('publish')
+            ->with($this->callback(function ($input) use (&$published) {
+                $published = $input['MessageAttributes'];
+
+                return true;
+            }))
+            ->willReturn(ResultMockFactory::create(PublishResponse::class, ['MessageId' => 4711]));
+
+        $transport = new SnsTransport(
+            $sns,
+            new HeaderSerializerStub($headers),
+            'arn:aws:sns:us-east-1:1234567890:test'
+        );
+        $transport->send(new Envelope(new TestMessage('hello')));
+
+        return $published;
+    }
+
+    /**
+     * Mirrors how SqsConsumer and Symfony's Amazon SQS transport rebuild the headers of a message
+     * that SNS delivered to a subscribed queue.
+     *
+     * @param array<string, MessageAttributeValue> $attributes
+     *
+     * @return array<string, string>
+     */
+    private function readBackAsSqsConsumerWould(array $attributes): array
+    {
+        $headers = [];
+
+        if (isset($attributes['X-Symfony-Messenger']) && $attributes['X-Symfony-Messenger']->getDataType() === 'String') {
+            $headers = json_decode($attributes['X-Symfony-Messenger']->getStringValue(), true);
+            unset($attributes['X-Symfony-Messenger']);
+        }
+
+        unset($attributes['Headers']);
+
+        foreach ($attributes as $name => $attribute) {
+            if ($attribute->getDataType() !== 'String') {
+                continue;
+            }
+
+            $headers[$name] = $attribute->getStringValue();
+        }
+
+        return $headers;
+    }
+}
+
+/**
+ * @internal
+ */
+final class HeaderSerializerStub implements SerializerInterface
+{
+    /** @var array<string, string> */
+    private $headers;
+
+    /**
+     * @param array<string, string> $headers
+     */
+    public function __construct(array $headers)
+    {
+        $this->headers = $headers;
+    }
+
+    public function decode(array $encodedEnvelope): Envelope
+    {
+        throw new \LogicException('Not implemented');
+    }
+
+    public function encode(Envelope $envelope): array
+    {
+        return ['body' => 'hello', 'headers' => $this->headers];
     }
 }

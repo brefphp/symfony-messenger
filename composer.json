@@ -21,6 +21,7 @@
         "async-aws/sqs": "^1.2|^2.0",
         "async-aws/event-bridge": "^1.0",
         "bref/bref": "^1.5 || ^2.0 || ^3.0",
+        "psr/event-dispatcher": "^1.0",
         "symfony/amazon-sqs-messenger": "^5.4 || ^6.0 || ^7.0 || ^8.0",
         "symfony/config": "^5.4 || ^6.0 || ^7.0 || ^8.0",
         "symfony/dependency-injection": "^5.4 || ^6.0 || ^7.0 || ^8.0",

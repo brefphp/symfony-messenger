@@ -1,0 +1,16 @@
+framework:
+    messenger:
+        transports:
+            foo: 'sns://arn:aws:sns:us-east-1:1234567890:test'
+
+bref_messenger:
+    sns: true
+
+services:
+    bref.messenger.sns_client:
+        class: AsyncAws\Sns\SnsClient
+        public: true
+
+    Bref\Symfony\Messenger\Service\BusDriver:
+        alias: 'Bref\Symfony\Messenger\Service\EventDispatchingBusDriver'
+        public: true
